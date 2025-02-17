@@ -25,6 +25,19 @@ import App from '../App';
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      {/* Admin Routes - En üstte olmalı */}
+      <Route path="admin">
+        <Route index element={<Navigate to="/admin/login" replace />} />
+        <Route path="login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+        <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="words" element={<AdminWordsPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
+        </Route>
+      </Route>
+
+      {/* Ana Uygulama Routes */}
       <Route path="/" element={<App />}>
         {/* Auth Routes */}
         <Route path="auth" element={<AuthLayout />}>
@@ -32,23 +45,6 @@ export const AppRoutes: React.FC = () => {
           <Route path="register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
-        </Route>
-
-        {/* Admin Auth Route */}
-        <Route path="admin">
-          <Route path="login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
-          <Route 
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="words" element={<AdminWordsPage />} />
-            <Route path="notifications" element={<AdminNotificationsPage />} />
-          </Route>
         </Route>
 
         {/* Dashboard Routes */}
