@@ -1,63 +1,38 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useEditor } from '../context/EditorContext';
+import { LoadingOverlay } from '../../../components';
 
 export const EditorContent: React.FC = () => {
   const { state, saveContent } = useEditor();
-  const [localContent, setLocalContent] = useState<string>('');
 
-  useEffect(() => {
-    if (state.currentContent) {
-      setLocalContent(JSON.stringify(state.currentContent.content, null, 2));
-    }
-  }, [state.currentContent]);
-
-  const handleContentChange = (value: string) => {
-    setLocalContent(value);
-    try {
-      const parsedContent = JSON.parse(value);
-      if (state.currentContent) {
-        saveContent({
-          ...state.currentContent,
-          content: parsedContent,
-        });
-      }
-    } catch (error) {
-      console.error('Invalid JSON:', error);
-    }
-  };
+  if (state.isLoading) {
+    return <LoadingOverlay />;
+  }
 
   if (!state.currentContent) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
-        İçerik seçilmedi
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">Lütfen düzenlemek için bir içerik seçin veya yeni içerik oluşturun.</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full p-4">
-      <div className="mb-4">
-        <input
-          type="text"
-          value={state.currentContent.title}
-          onChange={(e) => {
-            if (state.currentContent) {
-              saveContent({
-                ...state.currentContent,
-                title: e.target.value,
-              });
-            }
-          }}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="İçerik başlığı"
-        />
-      </div>
+    <div className="p-4 h-full">
       <textarea
-        value={localContent}
-        onChange={(e) => handleContentChange(e.target.value)}
-        className="w-full h-[calc(100%-4rem)] p-4 font-mono text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="İçeriği JSON formatında girin"
+        className="w-full h-full p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        value={JSON.stringify(state.currentContent.content, null, 2)}
+        onChange={(e) => {
+          try {
+            const content = JSON.parse(e.target.value);
+            saveContent({
+              ...state.currentContent,
+              content,
+            });
+          } catch (error) {
+            console.error('Invalid JSON:', error);
+          }
+        }}
       />
     </div>
   );
