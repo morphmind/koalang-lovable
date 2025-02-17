@@ -57,10 +57,10 @@ export const AdminLoginPage: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-bs-primary to-bs-800" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">
-            Admin Paneli
+            Koalang Yönetim Paneli
           </h1>
           <p className="text-white/80 text-sm">
-            Oxford 3000™ Yönetim Paneli
+            Koalang Yönetim Paneli
           </p>
         </div>
 
@@ -172,4 +172,3 @@ export const AdminLoginPage: React.FC = () => {
     </div>
   );
 };
-
