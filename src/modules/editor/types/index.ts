@@ -1,22 +1,10 @@
 
-export type EditorContent = {
-  id: string;
-  title: string;
-  content: Record<string, any>;
-  status: 'draft' | 'published' | 'archived';
-  published_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
+import { Database } from '../../../types/supabase';
 
-export type EditorVersion = {
-  id: string;
-  content_id: string;
-  version: number;
-  content: Record<string, any>;
-  created_by: string;
-  created_at: string;
-};
+type Tables = Database['public']['Tables'];
+
+export type EditorContent = Tables['editor_content']['Row'];
+export type EditorVersion = Tables['editor_content_history']['Row'];
 
 export type EditorState = {
   currentContent: EditorContent | null;
