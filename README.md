@@ -1,69 +1,249 @@
-# Welcome to your Lovable project
+# Oxford 3000™ Kelime Öğrenme Platformu
 
-## Project info
+Modern ve etkileşimli bir İngilizce kelime öğrenme platformu. Oxford 3000™ kelime listesini kullanarak İngilizce kelime dağarcığınızı geliştirmenize yardımcı olur.
 
-**URL**: https://lovable.dev/projects/b75b5c02-c96e-48d9-a3a6-abb07cafdd7a
+## 🌟 Özellikler
 
-## How can I edit this code?
+### 1. Kelime Öğrenme
+- **Oxford 3000™ Kelime Listesi**: En sık kullanılan ve önemli 3000 İngilizce kelime
+- **CEFR Seviyeleri**: A1'den C1'e kadar seviyelendirilmiş kelimeler
+- **Detaylı Kelime Kartları**: 
+  - Telaffuz
+  - Türkçe anlamlar
+  - Örnek cümleler
+  - Kelime türü bilgisi
+  - Öğrenme durumu takibi
 
-There are several ways of editing your application.
+### 2. Sınav Sistemi
+- **Özelleştirilebilir Sınavlar**:
+  - Soru sayısı seçimi (10-100 arası)
+  - Zorluk seviyesi seçimi (A1-C1)
+  - Kelime havuzu seçimi (Öğrenilen/Tüm kelimeler)
+  - Farklı soru tipleri:
+    - Çoktan seçmeli
+    - Cümle tamamlama
+    - Telaffuz
+    - Örnek eşleştirme
 
-**Use Lovable**
+- **Detaylı Analiz**:
+  - Seviye bazlı performans analizi
+  - Kelime türü bazlı analiz
+  - Doğru/yanlış istatistikleri
+  - Süre takibi
+  - Kişiselleştirilmiş öneriler
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b75b5c02-c96e-48d9-a3a6-abb07cafdd7a) and start prompting.
+### 3. İlerleme Takibi
+- Öğrenilen kelime sayısı
+- Seviye bazlı ilerleme
+- Başarı oranları
+- Öğrenme istatistikleri
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠 Teknik Detaylar
 
-**Use your preferred IDE**
+### Kullanılan Teknolojiler
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+#### Frontend
+- **React 18.3.1**: Modern UI geliştirme
+- **TypeScript**: Tip güvenliği ve geliştirici deneyimi
+- **Vite**: Hızlı geliştirme ve build süreci
+- **TailwindCSS**: Özelleştirilebilir UI tasarımı
+- **Lucide Icons**: Modern ikonlar
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+#### State Yönetimi
+- Context API
+- Custom Hooks
+- Reducer Pattern
 
-Follow these steps:
+### Proje Yapısı
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```
+src/
+├── components/         # Genel UI bileşenleri
+├── exam/              # Sınav sistemi
+│   ├── components/    # Sınav bileşenleri
+│   ├── context/      # Sınav state yönetimi
+│   ├── hooks/        # Custom hooks
+│   ├── pages/        # Sınav sayfaları
+│   ├── types/        # TypeScript tipleri
+│   └── utils/        # Yardımcı fonksiyonlar
+├── data/             # Oxford 3000 kelime verileri
+├── styles/           # CSS stilleri
+└── utils/            # Genel yardımcı fonksiyonlar
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Önemli Bileşenler
 
-# Step 3: Install the necessary dependencies.
-npm i
+#### 1. QuizPage
+- Sınav başlatma
+- Soru gösterimi
+- Sonuç analizi
+- İlerleme takibi
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+#### 2. WordCard
+- Kelime detayları
+- Telaffuz desteği
+- Öğrenme durumu
+- Örnek cümleler
+
+#### 3. ContentSection
+- Kelime listesi görünümü
+- Seviye filtreleme
+- Arama fonksiyonu
+- Sayfalama
+
+### Stil Sistemi
+
+#### CSS Organizasyonu
+```
+styles/
+├── base.css          # Temel stiller
+├── components/       # Bileşen stilleri
+├── layout.css        # Layout stilleri
+├── pages/           # Sayfa özel stilleri
+└── utils/           # Yardımcı stiller
+```
+
+#### Tema Renkleri
+- Primary: #081C9E
+- Navy: #00124F
+- Gradient: Navy -> Primary
+- Nötr: #8D93A5
+
+### Performans Optimizasyonları
+
+1. **Kod Bölme**
+   - Lazy loading
+   - Dinamik imports
+   - Route-based code splitting
+
+2. **Veri Yönetimi**
+   - Memoization
+   - Debouncing
+   - Önbellek stratejileri
+
+3. **Asset Optimizasyonu**
+   - Lazy image loading
+   - SVG ikonlar
+   - Minifikasyon
+
+## 🚀 Kurulum
+
+```bash
+# Depoyu klonla
+git clone [repo-url]
+
+# Bağımlılıkları yükle
+npm install
+
+# Geliştirme sunucusunu başlat
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Yapılandırma
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Vite Yapılandırması
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  },
+});
+```
 
-**Use GitHub Codespaces**
+### Tailwind Yapılandırması
+```javascript
+export default {
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        'bs-primary': '#081C9E',
+        'bs-navy': '#00124F',
+        // ...diğer renkler
+      }
+    }
+  }
+}
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📱 Responsive Tasarım
 
-## What technologies are used for this project?
+- Mobile-first yaklaşım
+- Breakpoints:
+  - sm: 640px
+  - md: 768px
+  - lg: 1024px
+  - xl: 1280px
 
-This project is built with .
+## 🎯 Özellik Detayları
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Sınav Sistemi
 
-## How can I deploy this project?
+#### Soru Tipleri
+1. **Çoktan Seçmeli**
+   - 4 seçenek
+   - Anlam eşleştirme
+   - Anında geri bildirim
 
-Simply open [Lovable](https://lovable.dev/projects/b75b5c02-c96e-48d9-a3a6-abb07cafdd7a) and click on Share -> Publish.
+2. **Cümle Tamamlama**
+   - Bağlam içinde kelime kullanımı
+   - Örnek cümle bazlı
+   - Boşluk doldurma
 
-## I want to use a custom domain - is that possible?
+3. **Telaffuz**
+   - Ses dosyası dinleme
+   - Kelime seçimi
+   - IPA gösterimi
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+4. **Örnek Eşleştirme**
+   - Cümle içinde kelime bulma
+   - Bağlam anlama
+   - Kullanım örnekleri
+
+#### Analiz Sistemi
+- Seviye bazlı performans
+- Kelime türü analizi
+- Zaman analizi
+- Öneriler sistemi
+
+### Kelime Kartı Sistemi
+
+#### Özellikler
+- Telaffuz desteği
+- Örnek cümleler
+- Türkçe anlamlar
+- Öğrenme durumu
+- Seviye gösterimi
+
+#### İnteraktif Öğeler
+- Ses çalma
+- Öğrenildi işaretleme
+- Animasyonlar
+- Hover efektleri
+
+## 🔒 Güvenlik
+
+- Input sanitization
+- XSS koruması
+- Rate limiting
+- Error handling
+
+## 🤝 Katkıda Bulunma
+
+1. Fork the Project
+2. Create your Feature Branch
+3. Commit your Changes
+4. Push to the Branch
+5. Open a Pull Request
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+## 🙏 Teşekkürler
+
+- Oxford University Press
+- React Topluluğu
+- Vite Ekibi
+- TailwindCSS Ekibi

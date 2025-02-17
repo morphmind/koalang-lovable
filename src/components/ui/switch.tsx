@@ -1,27 +1,61 @@
-import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
+import React from 'react';
+import * as SwitchPrimitive from '@radix-ui/react-switch';
+import { cn } from '../../lib/utils';
 
-import { cn } from "@/lib/utils"
+interface SwitchProps {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+}
 
-const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
-      className
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
+export const Switch: React.FC<SwitchProps> = ({
+  checked,
+  onChange,
+  disabled = false,
+  size = 'md'
+}) => {
+  const sizes = {
+    sm: {
+      root: 'w-8 h-4',
+      thumb: 'w-3 h-3',
+      translate: 'translate-x-4'
+    },
+    md: {
+      root: 'w-11 h-6',
+      thumb: 'w-5 h-5',
+      translate: 'translate-x-5'
+    },
+    lg: {
+      root: 'w-14 h-7',
+      thumb: 'w-6 h-6',
+      translate: 'translate-x-7'
+    }
+  };
+
+  return (
+    <SwitchPrimitive.Root
+      checked={checked}
+      onCheckedChange={onChange}
+      disabled={disabled}
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+        'peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent',
+        'transition-colors duration-200 ease-in-out',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bs-primary focus-visible:ring-offset-2',
+        'data-[state=checked]:bg-bs-primary data-[state=unchecked]:bg-bs-200',
+        'hover:data-[state=checked]:bg-bs-primary/90 hover:data-[state=unchecked]:bg-bs-300',
+        disabled && 'cursor-not-allowed opacity-50',
+        sizes[size].root
       )}
-    />
-  </SwitchPrimitives.Root>
-))
-Switch.displayName = SwitchPrimitives.Root.displayName
-
-export { Switch }
+    >
+      <SwitchPrimitive.Thumb
+        className={cn(
+          'pointer-events-none block rounded-full bg-white shadow-lg ring-0',
+          'transition-transform duration-200 ease-in-out',
+          'data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0.5',
+          sizes[size].thumb
+        )}
+      />
+    </SwitchPrimitive.Root>
+  );
+};
