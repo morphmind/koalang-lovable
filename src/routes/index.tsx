@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../modules/auth/components';
@@ -24,50 +25,49 @@ import App from '../App';
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<App />} />
-      
-      {/* Auth Routes */}
-      <Route path="/auth" element={<AuthLayout />}>
-        <Route path="login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-        <Route path="forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-        <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
-      </Route>
+      <Route path="/" element={<App />}>
+        {/* Auth Routes */}
+        <Route path="auth" element={<AuthLayout />}>
+          <Route path="login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+          <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
+        </Route>
 
-      {/* Admin Auth Route */}
-      <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+        {/* Admin Auth Route */}
+        <Route path="admin">
+          <Route path="login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+          <Route 
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="words" element={<AdminWordsPage />} />
+            <Route path="notifications" element={<AdminNotificationsPage />} />
+          </Route>
+        </Route>
 
-      {/* Admin Routes */}
-      <Route 
-        path="/admin" 
-        element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="users" element={<AdminUsersPage />} />
-        <Route path="words" element={<AdminWordsPage />} />
-        <Route path="notifications" element={<AdminNotificationsPage />} />
-      </Route>
-
-      {/* Dashboard Routes */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="progress" element={<ProgressPage />} />
-        <Route path="achievements" element={<AchievementsPage />} />
-        <Route path="learned-words" element={<LearnedWordsPage />} />
-        <Route path="settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to="profile" replace />} />
-          <Route path="profile" element={<SettingsProfilePage />} />
+        {/* Dashboard Routes */}
+        <Route 
+          path="dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="progress" element={<ProgressPage />} />
+          <Route path="achievements" element={<AchievementsPage />} />
+          <Route path="learned-words" element={<LearnedWordsPage />} />
+          <Route path="settings" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="profile" replace />} />
+            <Route path="profile" element={<SettingsProfilePage />} />
+          </Route>
         </Route>
       </Route>
 
