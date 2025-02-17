@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../modules/auth/components';
@@ -20,6 +21,11 @@ import { SettingsProfilePage } from '../modules/settings/pages/SettingsProfilePa
 import { DashboardPage } from '../modules/dashboard/pages/DashboardPage';
 import { ForgotPasswordPage } from '../modules/auth/pages/ForgotPasswordPage';
 import { NewPasswordPage } from '../modules/auth/pages/NewPasswordPage';
+import { AdminLayout } from '../modules/admin/components/AdminLayout';
+import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage';
+import { AdminUsersPage } from '../modules/admin/pages/AdminUsersPage';
+import { AdminWordsPage } from '../modules/admin/pages/AdminWordsPage';
+import { AdminNotificationsPage } from '../modules/admin/pages/AdminNotificationsPage';
 import App from '../App';
 
 export const AppRoutes: React.FC = () => {
@@ -59,6 +65,21 @@ export const AppRoutes: React.FC = () => {
           <Route path="appearance" element={<SettingsAppearancePage />} />
           <Route path="security" element={<SettingsSecurityPage />} />
         </Route>
+      </Route>
+
+      {/* Admin Routes */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="words" element={<AdminWordsPage />} />
+        <Route path="notifications" element={<AdminNotificationsPage />} />
       </Route>
 
       {/* Catch all route */}
