@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   email: string;
@@ -28,6 +29,6 @@ export interface AuthContextType {
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
-  logout: (navigate?: (path: string) => void) => Promise<void>;
+  signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
