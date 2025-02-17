@@ -20,7 +20,8 @@ export const AdminLoginPage: React.FC = () => {
     setLoginError(null);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Önce normal giriş yap
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -30,21 +31,27 @@ export const AdminLoginPage: React.FC = () => {
       // Kullanıcının admin olup olmadığını kontrol et
       const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
         'is_admin',
-        { p_user_id: (await supabase.auth.getUser()).data.user?.id }
+        { p_user_id: signInData.user?.id }
       );
 
-      if (adminCheckError) throw adminCheckError;
+      console.log('Admin check result:', { isAdminResult, adminCheckError });
+
+      if (adminCheckError) {
+        console.error('Admin check error:', adminCheckError);
+        throw adminCheckError;
+      }
 
       if (!isAdminResult) {
         throw new Error('Bu alana erişim yetkiniz yok.');
       }
 
       // Admin girişi başarılı, admin paneline yönlendir
+      console.log('Admin login successful, redirecting...');
+      setIsSubmitting(false);
       navigate('/admin/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
       setLoginError(err.message || 'Giriş yapılırken bir hata oluştu');
-    } finally {
       setIsSubmitting(false);
     }
   };
