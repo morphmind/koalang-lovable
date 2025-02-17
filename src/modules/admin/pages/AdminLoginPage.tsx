@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../auth/context';
+import { supabase } from '../../../lib/supabase';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -11,16 +12,38 @@ export const AdminLoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setLoginError(null);
 
     try {
-      await login({ email, password });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+
+      // Kullanıcının admin olup olmadığını kontrol et
+      const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
+        'is_admin',
+        { p_user_id: (await supabase.auth.getUser()).data.user?.id }
+      );
+
+      if (adminCheckError) throw adminCheckError;
+
+      if (!isAdminResult) {
+        throw new Error('Bu alana erişim yetkiniz yok.');
+      }
+
+      // Admin girişi başarılı, admin paneline yönlendir
       navigate('/admin');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
+      setLoginError(err.message || 'Giriş yapılırken bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }
@@ -110,14 +133,14 @@ export const AdminLoginPage: React.FC = () => {
                 </div>
               </div>
 
-              {error && (
+              {(loginError || error) && (
                 <div className="rounded-xl bg-red-50 p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-400" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-700">{error}</p>
+                      <p className="text-sm text-red-700">{loginError || error}</p>
                     </div>
                   </div>
                 </div>
