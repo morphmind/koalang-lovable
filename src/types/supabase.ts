@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -17,6 +18,12 @@ export interface Database {
           avatar_url: string | null
           created_at: string
           updated_at: string
+          first_name: string | null
+          last_name: string | null
+          phone: string | null
+          notification_preferences: Json
+          theme_preferences: Json
+          privacy_settings: Json
         }
         Insert: {
           id: string
@@ -25,6 +32,12 @@ export interface Database {
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
+          first_name?: string | null
+          last_name?: string | null
+          phone?: string | null
+          notification_preferences?: Json
+          theme_preferences?: Json
+          privacy_settings?: Json
         }
         Update: {
           id?: string
@@ -33,6 +46,12 @@ export interface Database {
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
+          first_name?: string | null
+          last_name?: string | null
+          phone?: string | null
+          notification_preferences?: Json
+          theme_preferences?: Json
+          privacy_settings?: Json
         }
       }
       notifications: {
@@ -128,6 +147,64 @@ export interface Database {
           skipped_questions?: number
           time_spent?: number
           difficulty?: string
+          created_at?: string
+        }
+      }
+      editor_content: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          content: Json
+          status: string
+          created_at: string
+          updated_at: string
+          published_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          content: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+          published_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          content?: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+          published_at?: string | null
+        }
+      }
+      editor_content_history: {
+        Row: {
+          id: string
+          content_id: string
+          content: Json
+          version: number
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          content_id: string
+          content: Json
+          version: number
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          content_id?: string
+          content?: Json
+          version?: number
+          created_by?: string
           created_at?: string
         }
       }
