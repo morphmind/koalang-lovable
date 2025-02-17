@@ -10,7 +10,6 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   envDir: '.',
-  envDir: '.',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -18,10 +17,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     host: true,
     hmr: {
-      protocol: 'ws',
-      host: 'localhost',
-      port: 8080,
-      clientPort: 8080
+      protocol: 'wss',
+      clientPort: 443,
+      path: '/hmr/'
     }
   },
   define: {
@@ -41,3 +39,4 @@ export default defineConfig(({ mode }) => ({
     }
   }
 }));
+
