@@ -1,10 +1,25 @@
 
-import { Database } from '../../../types/supabase';
+import { Json } from '../../../types/supabase';
 
-type Tables = Database['public']['Tables'];
+export type EditorContent = {
+  id: string;
+  user_id: string;
+  title: string;
+  content: Json;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+};
 
-export type EditorContent = Tables['editor_content']['Row'];
-export type EditorVersion = Tables['editor_content_history']['Row'];
+export type EditorVersion = {
+  id: string;
+  content_id: string;
+  content: Json;
+  version: number;
+  created_by: string;
+  created_at: string;
+};
 
 export type EditorState = {
   currentContent: EditorContent | null;

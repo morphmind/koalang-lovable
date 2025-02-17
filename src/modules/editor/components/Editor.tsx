@@ -1,31 +1,20 @@
 
 import React from 'react';
-import { useEditor } from '../context/EditorContext';
-import { EditorToolbar } from './EditorToolbar';
+import { EditorProvider } from '../context/EditorContext';
 import { EditorContent } from './EditorContent';
-import { EditorHistory } from './EditorHistory';
-import { LoadingOverlay } from '../../../components';
+import { EditorToolbar } from './EditorToolbar';
+import { EditorList } from './EditorList';
 
-const Editor: React.FC = () => {
-  const { state } = useEditor();
-
-  if (state.isLoading) {
-    return <LoadingOverlay />;
-  }
-
+export const Editor: React.FC = () => {
   return (
-    <div className="flex flex-col h-full">
-      <EditorToolbar />
-      <div className="flex-1 flex gap-4">
-        <div className="flex-1">
+    <EditorProvider>
+      <div className="flex h-full">
+        <EditorList />
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <EditorToolbar />
           <EditorContent />
         </div>
-        <div className="w-64 border-l border-gray-200 p-4">
-          <EditorHistory />
-        </div>
       </div>
-    </div>
+    </EditorProvider>
   );
 };
-
-export default Editor;
