@@ -54,6 +54,29 @@ export interface Database {
           privacy_settings?: Json
         }
       }
+      admin_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: 'super_admin' | 'admin' | 'moderator'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: 'super_admin' | 'admin' | 'moderator'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: 'super_admin' | 'admin' | 'moderator'
+          created_at?: string
+          updated_at?: string
+        }
+      }
       notifications: {
         Row: {
           id: string
@@ -213,11 +236,17 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       notification_type: 'system' | 'learning' | 'quiz'
       notification_status: 'unread' | 'read'
+      admin_role: 'super_admin' | 'admin' | 'moderator'
     }
   }
 }
