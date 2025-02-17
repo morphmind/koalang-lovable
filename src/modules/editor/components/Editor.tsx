@@ -4,7 +4,7 @@ import { useEditor } from '../context/EditorContext';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorContent } from './EditorContent';
 import { EditorHistory } from './EditorHistory';
-import { LoadingOverlay } from '@/components';
+import { LoadingOverlay } from '../../../components';
 
 const Editor: React.FC = () => {
   const { state } = useEditor();
