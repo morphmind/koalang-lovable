@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../modules/auth/components';
@@ -9,19 +8,13 @@ import { RegisterPage } from '../modules/auth/pages/RegisterPage';
 import { LearnedWordsPage } from '../modules/dashboard/pages/LearnedWordsPage';
 import { AchievementsPage } from '../modules/dashboard/pages/AchievementsPage';
 import { ProgressPage } from '../modules/dashboard/pages/ProgressPage';
-import { SettingsEmailPage } from '../modules/settings/pages/SettingsEmailPage';
-import { SettingsPhonePage } from '../modules/settings/pages/SettingsPhonePage';
-import { SettingsPasswordPage } from '../modules/settings/pages/SettingsPasswordPage';
-import { SettingsNotificationsPage } from '../modules/settings/pages/SettingsNotificationsPage';
-import { SettingsAppearancePage } from '../modules/settings/pages/SettingsAppearancePage';
-import { SettingsPrivacyPage } from '../modules/settings/pages/SettingsPrivacyPage';
-import { SettingsSecurityPage } from '../modules/settings/pages/SettingsSecurityPage';
 import { SettingsLayout } from '../modules/settings/components/SettingsLayout';
 import { SettingsProfilePage } from '../modules/settings/pages/SettingsProfilePage';
 import { DashboardPage } from '../modules/dashboard/pages/DashboardPage';
 import { ForgotPasswordPage } from '../modules/auth/pages/ForgotPasswordPage';
 import { NewPasswordPage } from '../modules/auth/pages/NewPasswordPage';
 import { AdminLayout } from '../modules/admin/components/AdminLayout';
+import { AdminLoginPage } from '../modules/admin/pages/AdminLoginPage';
 import { AdminDashboardPage } from '../modules/admin/pages/AdminDashboardPage';
 import { AdminUsersPage } from '../modules/admin/pages/AdminUsersPage';
 import { AdminWordsPage } from '../modules/admin/pages/AdminWordsPage';
@@ -41,6 +34,24 @@ export const AppRoutes: React.FC = () => {
         <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
       </Route>
 
+      {/* Admin Auth Route */}
+      <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+
+      {/* Admin Routes */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="words" element={<AdminWordsPage />} />
+        <Route path="notifications" element={<AdminNotificationsPage />} />
+      </Route>
+
       {/* Dashboard Routes */}
       <Route 
         path="/dashboard" 
@@ -57,29 +68,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="settings" element={<SettingsLayout />}>
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<SettingsProfilePage />} />
-          <Route path="email" element={<SettingsEmailPage />} />
-          <Route path="password" element={<SettingsPasswordPage />} />
-          <Route path="phone" element={<SettingsPhonePage />} />
-          <Route path="notifications" element={<SettingsNotificationsPage />} />
-          <Route path="privacy" element={<SettingsPrivacyPage />} />
-          <Route path="appearance" element={<SettingsAppearancePage />} />
-          <Route path="security" element={<SettingsSecurityPage />} />
         </Route>
-      </Route>
-
-      {/* Admin Routes */}
-      <Route 
-        path="/admin" 
-        element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="users" element={<AdminUsersPage />} />
-        <Route path="words" element={<AdminWordsPage />} />
-        <Route path="notifications" element={<AdminNotificationsPage />} />
       </Route>
 
       {/* Catch all route */}
