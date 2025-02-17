@@ -165,7 +165,7 @@ export interface Database {
           id?: string
           user_id: string
           title: string
-          content: Json
+          content?: Json
           status?: string
           created_at?: string
           updated_at?: string
@@ -216,7 +216,8 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      notification_type: 'system' | 'learning' | 'quiz'
+      notification_status: 'unread' | 'read'
     }
   }
 }

@@ -282,7 +282,7 @@ export type Database = {
           link: string | null
           message: string
           title: string
-          type: string
+          type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Insert: {
@@ -292,7 +292,7 @@ export type Database = {
           link?: string | null
           message: string
           title: string
-          type: string
+          type: Database["public"]["Enums"]["notification_type"]
           user_id: string
         }
         Update: {
@@ -302,7 +302,7 @@ export type Database = {
           link?: string | null
           message?: string
           title?: string
-          type?: string
+          type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string
         }
         Relationships: [
@@ -562,7 +562,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      notification_status: "unread" | "read"
+      notification_type: "system" | "learning" | "quiz"
     }
     CompositeTypes: {
       [_ in never]: never

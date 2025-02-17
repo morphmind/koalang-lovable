@@ -1,3 +1,4 @@
+
 export type NotificationType = 'system' | 'learning' | 'quiz';
 
 export interface Notification {
