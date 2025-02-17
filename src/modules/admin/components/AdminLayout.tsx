@@ -1,15 +1,20 @@
 
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/context';
 import { LayoutDashboard, Users, BookOpen, Bell, Settings, LogOut } from 'lucide-react';
+import { LoadingScreen } from '../../../components/LoadingScreen';
 
 export const AdminLayout: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const location = useLocation();
 
+  if (isLoading) {
+    return <LoadingScreen message="Oturumunuz kontrol ediliyor..." />;
+  }
+
   if (!user) {
-    return null;
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
   const menuItems = [
@@ -36,7 +41,7 @@ export const AdminLayout: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-bs-navy">Admin Panel</h2>
-              <p className="text-xs text-bs-navygri">Manage your application</p>
+              <p className="text-xs text-bs-navygri">Oxford 3000™ Yönetimi</p>
             </div>
           </div>
         </div>
@@ -74,7 +79,7 @@ export const AdminLayout: React.FC = () => {
             <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
               <LogOut className="w-5 h-5 text-red-600" />
             </div>
-            <span className="font-medium">Logout</span>
+            <span className="font-medium">Çıkış Yap</span>
           </button>
         </div>
       </nav>
