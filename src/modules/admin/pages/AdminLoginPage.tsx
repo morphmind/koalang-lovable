@@ -7,7 +7,7 @@ import { supabase } from '../../../lib/supabase';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, error } = useAuth();
+  const { error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +40,7 @@ export const AdminLoginPage: React.FC = () => {
       }
 
       // Admin girişi başarılı, admin paneline yönlendir
-      navigate('/admin');
+      navigate('/admin/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
       setLoginError(err.message || 'Giriş yapılırken bir hata oluştu');
@@ -172,3 +172,4 @@ export const AdminLoginPage: React.FC = () => {
     </div>
   );
 };
+

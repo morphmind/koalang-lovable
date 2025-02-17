@@ -25,10 +25,10 @@ import App from '../App';
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Admin Routes - En üstte olmalı */}
+      {/* Admin Routes */}
       <Route path="admin">
         <Route index element={<Navigate to="/admin/login" replace />} />
-        <Route path="login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+        <Route path="login" element={<AdminLoginPage />} />
         <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="users" element={<AdminUsersPage />} />
