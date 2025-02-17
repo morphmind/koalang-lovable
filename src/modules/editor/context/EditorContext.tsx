@@ -3,8 +3,13 @@ import React, { createContext, useContext, useReducer } from 'react';
 import { EditorContextType, EditorContent, EditorVersion } from '../types';
 import { editorReducer, initialState } from './editorReducer';
 import { supabase } from '../../../lib/supabase';
+import { Database } from '../../../types/supabase';
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
+
+type Tables = Database['public']['Tables'];
+type EditorContentRow = Tables['editor_content']['Row'];
+type EditorHistoryRow = Tables['editor_content_history']['Row'];
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(editorReducer, initialState);
@@ -17,7 +22,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         .from('editor_content')
         .select()
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       if (!data) throw new Error('İçerik bulunamadı');
@@ -40,7 +45,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const { data, error } = await supabase
         .from('editor_content')
-        .update({ ...content, updated_at: new Date().toISOString() })
+        .update({
+          content: content.content,
+          title: content.title,
+          status: content.status,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', content.id)
         .select()
         .single();
@@ -52,12 +62,10 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { error: historyError } = await supabase
         .from('editor_content_history')
         .insert({
-          id: crypto.randomUUID(),
           content_id: content.id,
           content: content.content,
           version: state.versions.length + 1,
-          created_by: userData.user.id,
-          created_at: new Date().toISOString()
+          created_by: userData.user.id
         });
 
       if (historyError) throw historyError;
@@ -77,20 +85,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Kullanıcı bulunamadı');
 
-      const newContent = {
-        id: crypto.randomUUID(),
-        title,
-        content: {},
-        status: 'draft',
-        user_id: userData.user.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        published_at: null
-      };
-
       const { data, error } = await supabase
         .from('editor_content')
-        .insert(newContent)
+        .insert({
+          title,
+          content: {},
+          status: 'draft',
+          user_id: userData.user.id
+        })
         .select()
         .single();
 
@@ -116,7 +118,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           status: 'published',
           published_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
+        } as Partial<EditorContentRow>)
         .eq('id', id)
         .select()
         .single();
@@ -140,7 +142,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         .update({
           status: 'archived',
           updated_at: new Date().toISOString()
-        })
+        } as Partial<EditorContentRow>)
         .eq('id', id)
         .select()
         .single();
@@ -181,7 +183,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         .update({
           content: version.content,
           updated_at: new Date().toISOString()
-        })
+        } as Partial<EditorContentRow>)
         .eq('id', version.content_id)
         .select()
         .single();
