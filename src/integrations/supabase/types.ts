@@ -198,6 +198,82 @@ export type Database = {
         }
         Relationships: []
       }
+      editor_content: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          published_at: string | null
+          status: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          published_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editor_content_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editor_content_history: {
+        Row: {
+          content: Json
+          content_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          version: number
+        }
+        Insert: {
+          content: Json
+          content_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          version: number
+        }
+        Update: {
+          content?: Json
+          content_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editor_content_history_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "editor_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
