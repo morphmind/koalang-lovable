@@ -31,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           if (session?.user) {
             try {
-              // Kullanıcı profil bilgilerini yükle
               let { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
@@ -39,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .maybeSingle();
 
               if (!profile) {
-                // Profil yoksa oluştur
                 const { data: newProfile, error: profileError } = await supabase
                   .from('profiles')
                   .insert([
@@ -66,11 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
 
               dispatch({ type: 'SET_USER', payload: user });
-              console.log('User data loaded:', user);
-
-              // Yönlendirme kontrolü
-              const currentPath = window.location.pathname;
-              if (currentPath === '/admin/login') {
+              dispatch({ type: 'SET_LOADING', payload: false });
+              
+              // Admin giriş kontrolü
+              if (window.location.pathname === '/admin/login') {
                 const { data: adminRole } = await supabase
                   .from('admin_roles')
                   .select('role')
@@ -83,19 +80,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   await supabase.auth.signOut();
                   navigate('/');
                 }
-              } else if (currentPath === '/login' || currentPath === '/register' || currentPath === '/') {
-                navigate('/dashboard');
               }
 
             } catch (error) {
               console.error('Error loading user data:', error);
               dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
-            } finally {
               dispatch({ type: 'SET_LOADING', payload: false });
             }
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
           dispatch({ type: 'CLEAR_USER' });
           dispatch({ type: 'SET_LOADING', payload: false });
           navigate('/');
@@ -107,8 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check:', session);
-        
         if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -127,7 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           dispatch({ type: 'SET_USER', payload: user });
           
-          if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+          // Eğer login sayfasındaysa ve oturum açıksa dashboard'a yönlendir
+          const currentPath = window.location.pathname;
+          if (currentPath === '/login' || currentPath === '/register') {
             navigate('/dashboard');
           }
         }
@@ -148,22 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
-      console.log('Login attempt started...');
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
-      
-      if (error) {
-        console.error('Login error:', error);
-        throw error;
-      }
-
-      console.log('Login successful:', session);
-      return session;
+      const { error } = await supabase.auth.signInWithPassword(credentials);
+      if (error) throw error;
 
     } catch (error: any) {
-      console.error('Login process error:', error);
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     } finally {
@@ -173,11 +157,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (credentials: { email: string; password: string; username: string }) => {
     try {
-      console.log('Register attempt started...');
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { data: { session }, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
@@ -187,16 +170,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) {
-        console.error('Register error:', error);
-        throw error;
-      }
-
-      console.log('Register successful:', session);
-      return session;
+      if (error) throw error;
 
     } catch (error: any) {
-      console.error('Register process error:', error);
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
     } finally {

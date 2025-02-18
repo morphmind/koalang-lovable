@@ -51,7 +51,7 @@ export const useAuthForm = (type: 'login' | 'register') => {
   }, [values]);
 
   const validateAllFields = useCallback(() => {
-    const formErrors = validateForm(values as Record<string, string>);
+    const formErrors = validateForm(values);
     setErrors(formErrors);
     setTouched(Object.keys(values).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
     return Object.values(formErrors).every(error => !error);
@@ -94,25 +94,20 @@ export const useAuthForm = (type: 'login' | 'register') => {
         });
       }
 
-      console.log('🟢 Auth başarılı, yönlendirme yapılıyor...');
-      await handleSuccessfulAuth();
+      console.log('🟢 Auth başarılı, popup kapatılıyor...');
+      await closeAuthPopup();
+
+      // Kısa bir gecikme ile yönlendirme yap
+      setTimeout(() => {
+        console.log('🟢 Dashboard\'a yönlendiriliyor...');
+        navigate('/dashboard');
+      }, 100);
 
     } catch (err) {
       console.error('🔴 Auth hatası:', err);
       setFormError(err instanceof Error ? err.message : 'Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSuccessfulAuth = async () => {
-    try {
-      await closeAuthPopup();
-      await new Promise(resolve => setTimeout(resolve, 300)); // Biraz bekleyelim
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('🔴 Yönlendirme hatası:', err);
-      throw err;
     }
   };
 
