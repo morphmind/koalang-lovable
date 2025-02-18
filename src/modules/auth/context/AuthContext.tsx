@@ -1,4 +1,3 @@
-
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
@@ -52,26 +51,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               console.log('User data loaded:', user);
 
-              // Admin kontrolü yap
-              const { data: adminRole } = await supabase
-                .from('admin_roles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-
-              // Eğer admin sayfasında değilse ve normal giriş yapılmışsa dashboard'a yönlendir
+              // Sadece admin/login sayfasındaysa admin kontrolü yap
               const currentPath = window.location.pathname;
-              if (!currentPath.startsWith('/admin')) {
+              if (currentPath.startsWith('/admin/login')) {
+                const { data: adminRole } = await supabase
+                  .from('admin_roles')
+                  .select('role')
+                  .eq('user_id', session.user.id)
+                  .maybeSingle();
+
+                if (adminRole) {
+                  navigate('/admin/dashboard');
+                } else {
+                  // Admin değilse çıkış yap ve ana sayfaya yönlendir
+                  await supabase.auth.signOut();
+                  navigate('/');
+                }
+              } else {
+                // Normal login ise direkt dashboard'a yönlendir
                 navigate('/dashboard');
-              }
-              // Admin sayfasında giriş yapıldıysa ve admin rolü varsa admin dashboard'a yönlendir
-              else if (currentPath.startsWith('/admin') && adminRole) {
-                navigate('/admin/dashboard');
-              }
-              // Admin sayfasında giriş yapıldı ama admin değilse ana sayfaya yönlendir
-              else if (currentPath.startsWith('/admin') && !adminRole) {
-                await supabase.auth.signOut();
-                navigate('/');
               }
 
             } catch (error) {
