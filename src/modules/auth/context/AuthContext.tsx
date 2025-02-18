@@ -24,119 +24,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        
-        if (event === 'SIGNED_IN') {
-          if (session?.user) {
-            try {
-              let { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .maybeSingle();
-
-              if (!profile) {
-                const { data: newProfile, error: profileError } = await supabase
-                  .from('profiles')
-                  .insert([
-                    { 
-                      id: session.user.id,
-                      email: session.user.email,
-                      username: session.user.user_metadata.username || session.user.email?.split('@')[0],
-                    }
-                  ])
-                  .select()
-                  .single();
-
-                if (profileError) throw profileError;
-                profile = newProfile;
-              }
-
-              const user: User = {
-                id: session.user.id,
-                email: session.user.email!,
-                username: profile.username || '',
-                avatar: profile.avatar_url,
-                createdAt: new Date(profile.created_at || session.user.created_at),
-                updatedAt: new Date(profile.updated_at || session.user.created_at)
-              };
-
-              dispatch({ type: 'SET_USER', payload: user });
-              dispatch({ type: 'SET_LOADING', payload: false });
-              
-              // Admin giriş kontrolü
-              if (window.location.pathname === '/admin/login') {
-                const { data: adminRole } = await supabase
-                  .from('admin_roles')
-                  .select('role')
-                  .eq('user_id', session.user.id)
-                  .maybeSingle();
-
-                if (adminRole) {
-                  navigate('/admin/dashboard');
-                } else {
-                  await supabase.auth.signOut();
-                  navigate('/');
-                }
-              }
-
-            } catch (error) {
-              console.error('Error loading user data:', error);
-              dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
-              dispatch({ type: 'SET_LOADING', payload: false });
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
-          dispatch({ type: 'CLEAR_USER' });
-          dispatch({ type: 'SET_LOADING', payload: false });
-          navigate('/');
-        }
+    const handleAuthChange = async (session: any) => {
+      if (!session?.user) {
+        dispatch({ type: 'CLEAR_USER' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
       }
-    );
 
-    // Initial session check
-    const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: profile } = await supabase
+        let { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (!profile) {
+          const { data: newProfile, error: profileError } = await supabase
             .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
+            .insert([
+              { 
+                id: session.user.id,
+                email: session.user.email,
+                username: session.user.user_metadata.username || session.user.email?.split('@')[0],
+              }
+            ])
+            .select()
             .single();
 
-          const user: User = {
-            id: session.user.id,
-            email: session.user.email!,
-            username: profile?.username || '',
-            avatar: profile?.avatar_url,
-            createdAt: new Date(profile?.created_at || session.user.created_at),
-            updatedAt: new Date(profile?.updated_at || session.user.created_at)
-          };
+          if (profileError) throw profileError;
+          profile = newProfile;
+        }
 
-          dispatch({ type: 'SET_USER', payload: user });
-          
-          // Eğer login sayfasındaysa ve oturum açıksa dashboard'a yönlendir
-          const currentPath = window.location.pathname;
-          if (currentPath === '/login' || currentPath === '/register') {
-            navigate('/dashboard');
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email!,
+          username: profile.username || '',
+          avatar: profile.avatar_url,
+          createdAt: new Date(profile.created_at || session.user.created_at),
+          updatedAt: new Date(profile.updated_at || session.user.created_at)
+        };
+
+        dispatch({ type: 'SET_USER', payload: user });
+        
+        // Admin giriş kontrolü
+        if (window.location.pathname === '/admin/login') {
+          const { data: adminRole } = await supabase
+            .from('admin_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (adminRole) {
+            navigate('/admin/dashboard');
+          } else {
+            await supabase.auth.signOut();
+            navigate('/');
           }
+        } else if (['/login', '/register', '/'].includes(window.location.pathname)) {
+          navigate('/dashboard');
         }
       } catch (error) {
-        console.error('Session check error:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Oturum kontrolü sırasında hata oluştu' });
+        console.error('Error loading user data:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
-    checkSession();
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session);
+      
+      if (event === 'SIGNED_IN') {
+        await handleAuthChange(session);
+      } else if (event === 'SIGNED_OUT') {
+        dispatch({ type: 'CLEAR_USER' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        navigate('/');
+      }
+    });
 
-    return () => {
-      subscription.unsubscribe();
+    // Initial session check
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check:', session);
+        
+        if (session) {
+          await handleAuthChange(session);
+        } else {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Oturum kontrolü sırasında hata oluştu' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
     };
+
+    checkSession();
   }, [navigate]);
 
   const login = async (credentials: { email: string; password: string }) => {
@@ -144,9 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { error } = await supabase.auth.signInWithPassword(credentials);
+      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
       if (error) throw error;
 
+      return session;
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
@@ -160,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { error } = await supabase.auth.signUp({
+      const { data: { session }, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
@@ -172,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
 
+      return session;
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
