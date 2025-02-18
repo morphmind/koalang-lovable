@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             try {
               // Kullanıcı profil bilgilerini yükle
-              const { data: profile } = await supabase
+              let { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
@@ -53,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   .single();
 
                 if (profileError) throw profileError;
-
                 profile = newProfile;
               }
 
@@ -153,15 +152,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { data, error } = await supabase.auth.signInWithPassword(credentials);
+      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
       
       if (error) {
         console.error('Login error:', error);
         throw error;
       }
 
-      console.log('Login successful:', data);
-      return data;
+      console.log('Login successful:', session);
+      return session;
 
     } catch (error: any) {
       console.error('Login process error:', error);
@@ -178,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { data, error } = await supabase.auth.signUp({
+      const { data: { session }, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
@@ -193,8 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      console.log('Register successful:', data);
-      return data;
+      console.log('Register successful:', session);
+      return session;
 
     } catch (error: any) {
       console.error('Register process error:', error);
