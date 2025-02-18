@@ -3,7 +3,7 @@ import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { authReducer } from './authReducer';
-import { AuthContextType, User } from '../types';
+import { AuthContextType, User, LoginCredentials, RegisterCredentials } from '../types';
 
 const initialState = {
   user: null,
@@ -13,10 +13,18 @@ const initialState = {
 
 const AuthContext = createContext<AuthContextType>({
   ...initialState,
-  login: async () => {},
-  register: async () => {},
-  signOut: async () => {},
-  resetPassword: async () => {}
+  login: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+  register: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+  signOut: async () => {
+    throw new Error('AuthContext not initialized');
+  },
+  resetPassword: async () => {
+    throw new Error('AuthContext not initialized');
+  }
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -36,15 +44,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       console.log('Fetching user profile...');
-      let { data: profile } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
 
+      if (profileError) throw profileError;
+
       if (!profile) {
         console.log('Creating new profile...');
-        const { data: newProfile, error: profileError } = await supabase
+        const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert([
             { 
@@ -56,23 +66,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .select()
           .single();
 
-        if (profileError) throw profileError;
+        if (createError) throw createError;
         profile = newProfile;
       }
 
       const user: User = {
         id: session.user.id,
         email: session.user.email!,
-        username: profile.username || '',
+        username: profile.username,
         avatar: profile.avatar_url,
-        createdAt: new Date(profile.created_at || session.user.created_at),
-        updatedAt: new Date(profile.updated_at || session.user.created_at)
+        createdAt: new Date(profile.created_at),
+        updatedAt: new Date(profile.updated_at)
       };
 
       console.log('Setting user in context:', user);
       dispatch({ type: 'SET_USER', payload: user });
 
-      // Admin kontrolü
+      // Admin route kontrolü
       if (location.pathname.startsWith('/admin')) {
         const { data: adminRole } = await supabase
           .from('admin_roles')
@@ -80,20 +90,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        if (adminRole) {
-          navigate('/admin/dashboard', { replace: true });
-        } else {
-          await supabase.auth.signOut();
-          navigate('/', { replace: true });
+        if (!adminRole) {
+          console.log('Admin yetkisi yok, ana sayfaya yönlendiriliyor...');
+          await signOut();
+          return;
         }
-      } else if (['/login', '/register', '/auth/login', '/auth/register', '/'].includes(location.pathname)) {
-        console.log('Redirecting to dashboard...');
+      }
+      
+      // Auth sayfalarındaysa dashboard'a yönlendir
+      if (['/login', '/register', '/auth/login', '/auth/register', '/'].includes(location.pathname)) {
+        console.log('Auth sayfasından dashboard\'a yönlendiriliyor...');
         navigate('/dashboard', { replace: true });
       }
 
     } catch (error) {
       console.error('Error in handleAuthStateChange:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
+
+      console.log('Login attempt...', credentials.email);
+      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
+      
+      if (error) throw error;
+      if (!session) throw new Error('No session returned after login');
+
+      console.log('Login successful!');
+      return session;
+
+    } catch (error: any) {
+      console.error('Login error:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const register = async (credentials: RegisterCredentials) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
+
+      console.log('Registration attempt...', credentials.email);
+      const { data: { session }, error } = await supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+        options: {
+          data: {
+            username: credentials.username
+          }
+        }
+      });
+      
+      if (error) throw error;
+      if (!session) throw new Error('No session returned after registration');
+
+      console.log('Registration successful!');
+      return session;
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      throw error;
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      console.log('Signing out...');
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      dispatch({ type: 'CLEAR_USER' });
+      navigate('/', { replace: true });
+      console.log('Sign out successful!');
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+    } catch (error: any) {
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -138,89 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);
-
-  const login = async (credentials: { email: string; password: string }) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      console.log('Attempting login...');
-      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
-      
-      if (error) throw error;
-      if (!session) throw new Error('No session returned after login');
-
-      console.log('Login successful!');
-      return session;
-    } catch (error: any) {
-      console.error('Login error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const register = async (credentials: { email: string; password: string; username: string }) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      console.log('Attempting registration...');
-      const { data: { session }, error } = await supabase.auth.signUp({
-        email: credentials.email,
-        password: credentials.password,
-        options: {
-          data: {
-            username: credentials.username
-          }
-        }
-      });
-      
-      if (error) throw error;
-      if (!session) throw new Error('No session returned after registration');
-
-      console.log('Registration successful!');
-      return session;
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      console.log('Signing out...');
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      dispatch({ type: 'CLEAR_USER' });
-      navigate('/', { replace: true });
-      console.log('Sign out successful!');
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, signOut, resetPassword }}>
