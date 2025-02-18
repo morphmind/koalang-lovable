@@ -1,13 +1,10 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../auth/context';
 import { supabase } from '../../../lib/supabase';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { error: authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,15 +43,17 @@ export const AdminLoginPage: React.FC = () => {
       console.log('3. Admin kontrolü yapılıyor...');
 
       // 2. Admin kontrolü
-      const { data: isAdmin, error: adminError } = await supabase
+      const { data: adminRole, error: adminError } = await supabase
         .from('admin_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
 
-      console.log('4. Admin kontrolü sonucu:', { isAdmin, adminError });
+      console.log('4. Admin kontrolü sonucu:', { adminRole, adminError });
 
-      if (adminError || !isAdmin) {
+      if (adminError || !adminRole) {
+        // Eğer admin değilse, oturumu kapat
+        await supabase.auth.signOut();
         throw new Error('Bu alana erişim yetkiniz yok');
       }
 
@@ -66,6 +65,7 @@ export const AdminLoginPage: React.FC = () => {
     } catch (err: any) {
       console.error('Hata:', err);
       setLoginError(err.message);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -154,14 +154,14 @@ export const AdminLoginPage: React.FC = () => {
                 </div>
               </div>
 
-              {(loginError || authError) && (
+              {loginError && (
                 <div className="rounded-xl bg-red-50 p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-400" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-700">{loginError || authError}</p>
+                      <p className="text-sm text-red-700">{loginError}</p>
                     </div>
                   </div>
                 </div>
