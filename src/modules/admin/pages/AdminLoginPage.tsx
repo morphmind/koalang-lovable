@@ -1,13 +1,10 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../auth/context';
 import { supabase } from '../../../lib/supabase';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,34 +13,58 @@ export const AdminLoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     setLoginError(null);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      console.log('1. Giriş denemesi başlatılıyor...');
+
+      // 1. Önce normal giriş yap
+      const auth = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signInError) throw signInError;
+      console.log('2. Giriş sonucu:', auth);
 
-      // Kullanıcının admin olup olmadığını kontrol et
-      const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
-        'is_admin',
-        { p_user_id: (await supabase.auth.getUser()).data.user?.id }
-      );
-
-      if (adminCheckError) throw adminCheckError;
-
-      if (!isAdminResult) {
-        throw new Error('Bu alana erişim yetkiniz yok.');
+      if (auth.error) {
+        throw auth.error;
       }
 
-      // Admin girişi başarılı, admin paneline yönlendir
+      const userId = auth.data.user?.id;
+      
+      if (!userId) {
+        throw new Error('Kullanıcı bilgisi alınamadı');
+      }
+
+      console.log('3. Admin kontrolü yapılıyor...');
+
+      // 2. Admin kontrolü
+      const { data: adminRole, error: adminError } = await supabase
+        .from('admin_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      console.log('4. Admin kontrolü sonucu:', { adminRole, adminError });
+
+      if (adminError || !adminRole) {
+        // Eğer admin değilse, oturumu kapat
+        await supabase.auth.signOut();
+        throw new Error('Bu alana erişim yetkiniz yok');
+      }
+
+      console.log('5. Yönlendirme yapılıyor...');
+
+      // 3. Başarılı giriş, yönlendir
       navigate('/admin/dashboard');
+      
     } catch (err: any) {
-      console.error('Login error:', err);
-      setLoginError(err.message || 'Giriş yapılırken bir hata oluştu');
+      console.error('Hata:', err);
+      setLoginError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -57,10 +78,10 @@ export const AdminLoginPage: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-bs-primary to-bs-800" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">
-            Admin Paneli
+            Koalang Yönetim Paneli
           </h1>
           <p className="text-white/80 text-sm">
-            Oxford 3000™ Yönetim Paneli
+            Koalang Yönetim Paneli
           </p>
         </div>
 
@@ -133,14 +154,14 @@ export const AdminLoginPage: React.FC = () => {
                 </div>
               </div>
 
-              {(loginError || error) && (
+              {loginError && (
                 <div className="rounded-xl bg-red-50 p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-400" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-700">{loginError || error}</p>
+                      <p className="text-sm text-red-700">{loginError}</p>
                     </div>
                   </div>
                 </div>
@@ -172,4 +193,3 @@ export const AdminLoginPage: React.FC = () => {
     </div>
   );
 };
-
