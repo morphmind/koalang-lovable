@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../auth/context';
@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabase';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, error } = useAuth();
+  const { error: authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,13 +16,16 @@ export const AdminLoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) return;
+    if (isSubmitting) {
+      console.log('Form already submitting, preventing double submission');
+      return;
+    }
     
     setIsSubmitting(true);
     setLoginError(null);
 
     try {
-      console.log('Attempting login...');
+      console.log('Starting login process...');
       
       // Önce normal giriş
       const { error: signInError, data } = await supabase.auth.signInWithPassword({
@@ -30,18 +33,19 @@ export const AdminLoginPage: React.FC = () => {
         password,
       });
 
+      console.log('Sign in response:', { error: signInError, data });
+
       if (signInError) {
         console.error('Sign in error:', signInError);
         throw signInError;
       }
 
-      console.log('Sign in successful:', data);
-
       if (!data?.user?.id) {
+        console.error('No user data received');
         throw new Error('Kullanıcı bilgisi alınamadı');
       }
 
-      console.log('Checking admin status for user:', data.user.id);
+      console.log('Successfully signed in, checking admin status for:', data.user.id);
 
       // Admin kontrolü
       const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
@@ -49,7 +53,7 @@ export const AdminLoginPage: React.FC = () => {
         { p_user_id: data.user.id }
       );
 
-      console.log('Admin check result:', { isAdminResult, adminCheckError });
+      console.log('Admin check response:', { isAdminResult, adminCheckError });
 
       if (adminCheckError) {
         console.error('Admin check error:', adminCheckError);
@@ -57,18 +61,17 @@ export const AdminLoginPage: React.FC = () => {
       }
 
       if (!isAdminResult) {
+        console.error('User is not an admin');
         throw new Error('Bu alana erişim yetkiniz yok.');
       }
 
-      console.log('Admin check successful, redirecting...');
+      console.log('Admin check successful, preparing to navigate...');
       
-      // Yönlendirmeden önce loading durumunu kaldır
       setIsSubmitting(false);
       
-      // Yönlendirmeyi timeout ile yap
-      setTimeout(() => {
-        navigate('/admin/dashboard', { replace: true });
-      }, 100);
+      // Direkt navigate çağrısı yap
+      console.log('Navigating to dashboard...');
+      navigate('/admin/dashboard', { replace: true });
       
     } catch (err: any) {
       console.error('Login process error:', err);
@@ -161,14 +164,14 @@ export const AdminLoginPage: React.FC = () => {
                 </div>
               </div>
 
-              {(loginError || error) && (
+              {(loginError || authError) && (
                 <div className="rounded-xl bg-red-50 p-4">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-400" />
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-700">{loginError || error}</p>
+                      <p className="text-sm text-red-700">{loginError || authError}</p>
                     </div>
                   </div>
                 </div>
