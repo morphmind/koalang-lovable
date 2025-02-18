@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../auth/context';
@@ -16,66 +17,55 @@ export const AdminLoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting) {
-      console.log('Form already submitting, preventing double submission');
-      return;
-    }
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     setLoginError(null);
 
     try {
-      console.log('Starting login process...');
-      
-      // Önce normal giriş
-      const { error: signInError, data } = await supabase.auth.signInWithPassword({
+      console.log('1. Giriş denemesi başlatılıyor...');
+
+      // 1. Önce normal giriş yap
+      const auth = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log('Sign in response:', { error: signInError, data });
+      console.log('2. Giriş sonucu:', auth);
 
-      if (signInError) {
-        console.error('Sign in error:', signInError);
-        throw signInError;
+      if (auth.error) {
+        throw auth.error;
       }
 
-      if (!data?.user?.id) {
-        console.error('No user data received');
+      const userId = auth.data.user?.id;
+      
+      if (!userId) {
         throw new Error('Kullanıcı bilgisi alınamadı');
       }
 
-      console.log('Successfully signed in, checking admin status for:', data.user.id);
+      console.log('3. Admin kontrolü yapılıyor...');
 
-      // Admin kontrolü
-      const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
-        'is_admin',
-        { p_user_id: data.user.id }
-      );
+      // 2. Admin kontrolü
+      const { data: isAdmin, error: adminError } = await supabase
+        .from('admin_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
 
-      console.log('Admin check response:', { isAdminResult, adminCheckError });
+      console.log('4. Admin kontrolü sonucu:', { isAdmin, adminError });
 
-      if (adminCheckError) {
-        console.error('Admin check error:', adminCheckError);
-        throw adminCheckError;
+      if (adminError || !isAdmin) {
+        throw new Error('Bu alana erişim yetkiniz yok');
       }
 
-      if (!isAdminResult) {
-        console.error('User is not an admin');
-        throw new Error('Bu alana erişim yetkiniz yok.');
-      }
+      console.log('5. Yönlendirme yapılıyor...');
 
-      console.log('Admin check successful, preparing to navigate...');
-      
-      setIsSubmitting(false);
-      
-      // Direkt navigate çağrısı yap
-      console.log('Navigating to dashboard...');
-      navigate('/admin/dashboard', { replace: true });
+      // 3. Başarılı giriş, yönlendir
+      navigate('/admin/dashboard');
       
     } catch (err: any) {
-      console.error('Login process error:', err);
-      setLoginError(err.message || 'Giriş yapılırken bir hata oluştu');
+      console.error('Hata:', err);
+      setLoginError(err.message);
       setIsSubmitting(false);
     }
   };
