@@ -1,3 +1,4 @@
+
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
@@ -132,14 +133,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { error, data } = await supabase.auth.signInWithPassword(credentials);
+      const { error } = await supabase.auth.signInWithPassword(credentials);
       
       if (error) {
         console.error('Login error:', error);
         throw error;
       }
 
-      console.log('Login successful:', data);
+      // Login başarılı - diğer işlemler onAuthStateChange'de yapılacak
+      console.log('Login successful');
 
     } catch (error: any) {
       console.error('Login process error:', error);
