@@ -50,11 +50,7 @@ export const AppRoutes: React.FC = () => {
         {/* Dashboard Routes */}
         <Route 
           path="dashboard" 
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
+          element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}
         >
           <Route index element={<DashboardPage />} />
           <Route path="progress" element={<ProgressPage />} />
@@ -65,10 +61,11 @@ export const AppRoutes: React.FC = () => {
             <Route path="profile" element={<SettingsProfilePage />} />
           </Route>
         </Route>
-      </Route>
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Root redirect */}
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Route>
     </Routes>
   );
 };

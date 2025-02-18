@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,21 +11,21 @@ interface PublicRouteProps {
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({
   children,
-  redirectTo = '/'
+  redirectTo = '/dashboard'
 }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   const from = location.state?.from?.pathname || redirectTo;
 
   if (isLoading) {
-    return (
-      <LoadingScreen message="Oturumunuz kontrol ediliyor..." />
-    );
+    return <LoadingScreen message="Oturumunuz kontrol ediliyor..." />;
   }
 
   if (user) {
+    console.log('🟢 Kullanıcı giriş yapmış, yönlendiriliyor...', { to: from });
     return <Navigate to={from} replace />;
   }
 
+  console.log('🟡 Public route render ediliyor...');
   return <>{children}</>;
 };
