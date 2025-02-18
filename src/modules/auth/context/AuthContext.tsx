@@ -1,5 +1,6 @@
 
 import React, { createContext, useReducer, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { authReducer } from './authReducer';
 import { AuthContextType, User } from '../types';
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -49,6 +51,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               dispatch({ type: 'SET_LOADING', payload: false });
               
               console.log('User data loaded:', user);
+
+              // Admin kontrolü yap
+              const { data: adminRole } = await supabase
+                .from('admin_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+              // Eğer admin sayfasında değilse ve normal giriş yapılmışsa dashboard'a yönlendir
+              const currentPath = window.location.pathname;
+              if (!currentPath.startsWith('/admin')) {
+                navigate('/dashboard');
+              }
+              // Admin sayfasında giriş yapıldıysa ve admin rolü varsa admin dashboard'a yönlendir
+              else if (currentPath.startsWith('/admin') && adminRole) {
+                navigate('/admin/dashboard');
+              }
+              // Admin sayfasında giriş yapıldı ama admin değilse ana sayfaya yönlendir
+              else if (currentPath.startsWith('/admin') && !adminRole) {
+                await supabase.auth.signOut();
+                navigate('/');
+              }
+
             } catch (error) {
               console.error('Error loading user data:', error);
               dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
@@ -59,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('User signed out');
           dispatch({ type: 'CLEAR_USER' });
           dispatch({ type: 'SET_LOADING', payload: false });
+          navigate('/');
         }
       }
     );
@@ -100,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
