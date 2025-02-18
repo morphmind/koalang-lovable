@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../auth/context';
@@ -13,22 +13,6 @@ export const AdminLoginPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (user) {
-        const { data: isAdminResult } = await supabase.rpc('is_admin', {
-          p_user_id: user.id
-        });
-        
-        if (isAdminResult) {
-          navigate('/admin/dashboard');
-        }
-      }
-    };
-    
-    checkAuth();
-  }, [user, navigate]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,7 +22,9 @@ export const AdminLoginPage: React.FC = () => {
     setLoginError(null);
 
     try {
-      // Normal giriş
+      console.log('Attempting login...');
+      
+      // Önce normal giriş
       const { error: signInError, data } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -49,9 +35,13 @@ export const AdminLoginPage: React.FC = () => {
         throw signInError;
       }
 
+      console.log('Sign in successful:', data);
+
       if (!data?.user?.id) {
         throw new Error('Kullanıcı bilgisi alınamadı');
       }
+
+      console.log('Checking admin status for user:', data.user.id);
 
       // Admin kontrolü
       const { data: isAdminResult, error: adminCheckError } = await supabase.rpc(
@@ -59,7 +49,7 @@ export const AdminLoginPage: React.FC = () => {
         { p_user_id: data.user.id }
       );
 
-      console.log('Admin check result:', { isAdminResult, adminCheckError, userId: data.user.id });
+      console.log('Admin check result:', { isAdminResult, adminCheckError });
 
       if (adminCheckError) {
         console.error('Admin check error:', adminCheckError);
@@ -70,9 +60,15 @@ export const AdminLoginPage: React.FC = () => {
         throw new Error('Bu alana erişim yetkiniz yok.');
       }
 
-      // Admin girişi başarılı, yönlendirme yap
+      console.log('Admin check successful, redirecting...');
+      
+      // Yönlendirmeden önce loading durumunu kaldır
       setIsSubmitting(false);
-      navigate('/admin/dashboard', { replace: true });
+      
+      // Yönlendirmeyi timeout ile yap
+      setTimeout(() => {
+        navigate('/admin/dashboard', { replace: true });
+      }, 100);
       
     } catch (err: any) {
       console.error('Login process error:', err);
