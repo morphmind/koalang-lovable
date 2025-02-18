@@ -109,7 +109,7 @@ export const useAuthForm = (type: 'login' | 'register') => {
     try {
       await closeAuthPopup();
       await new Promise(resolve => setTimeout(resolve, 300)); // Biraz bekleyelim
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('🔴 Yönlendirme hatası:', err);
       throw err;
