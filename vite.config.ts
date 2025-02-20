@@ -10,7 +10,6 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   envDir: '.',
-  envDir: '.',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -23,12 +22,6 @@ export default defineConfig(({ mode }) => ({
       port: 8080,
       clientPort: 8080
     }
-  },
-  define: {
-    'process.env.ROUTER_FUTURE_FLAGS': JSON.stringify({
-      v7_startTransition: true,
-      v7_relativeSplatPath: true
-    })
   },
   build: {
     outDir: 'dist',
