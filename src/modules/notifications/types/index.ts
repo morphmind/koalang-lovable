@@ -1,15 +1,13 @@
-
 export type NotificationType = 'system' | 'learning' | 'quiz';
 
 export interface Notification {
-  id: string;
-  userId: string;
+  id: number;
+  created_at: Date;
   type: NotificationType;
   title: string;
   message: string;
-  isRead: boolean;
-  link?: string;
-  createdAt: Date;
+  is_read: boolean;
+  user_id: string;
 }
 
 export interface NotificationState {

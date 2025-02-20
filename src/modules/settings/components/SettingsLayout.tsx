@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Key, Smartphone, Bell, Eye, Palette, Shield } from 'lucide-react';
+import { User, Mail, Key, Smartphone, Bell, Eye, Palette, Shield, Settings } from 'lucide-react';
 import { SettingsProvider } from '../context/SettingsContext';
 
 export const SettingsLayout: React.FC = () => {
@@ -53,22 +53,55 @@ export const SettingsLayout: React.FC = () => {
   return (
     <SettingsProvider>
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Başlık */}
+        <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative hover:shadow-xl transition-all">
+          {/* Gradient Background */}
+          <div className="relative bg-gradient-to-br from-bs-primary to-bs-800 p-8">
+            {/* Dekoratif Pattern */}
+            <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5 pointer-events-none" />
+            
+            {/* Dekoratif Işık Efektleri */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-bs-600/20 rounded-full blur-3xl 
+                         -translate-y-1/2 translate-x-1/2 animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-bs-navy/20 rounded-full blur-2xl 
+                         translate-y-1/2 -translate-x-1/2 animate-pulse" />
+
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-white mb-1">
+                    Ayarlar
+                  </h1>
+                  <p className="text-white/80 flex items-center gap-2">
+                    <span>Hesap ayarlarınızı ve tercihlerinizi yönetin</span>
+                    <span className="w-1 h-1 rounded-full bg-white/30" />
+                    <span>Kişiselleştirme</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Ana Sekmeler */}
         <div className="bg-white rounded-2xl shadow-lg border border-bs-100 mb-6">
           <div className="flex flex-col items-center py-6">
             {/* Ana Sekmeler */}
-            <div className="flex gap-4 bg-bs-50 p-1 rounded-xl">
+            <div className="flex flex-wrap justify-center gap-2">
               {mainTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => handleMainTabClick(tab.id as 'profile' | 'preferences', tab.defaultPath)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium 
-                           transition-all ${activeMainTab === tab.id
-                             ? 'bg-white text-bs-primary shadow-lg' 
-                             : 'text-bs-navygri hover:text-bs-primary'}`}
+                  onClick={() => setActiveMainTab(tab.id)}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all
+                    ${activeMainTab === tab.id 
+                      ? 'bg-bs-primary text-white hover:text-white' 
+                      : 'text-bs-navygri hover:bg-bs-50 hover:text-bs-navy'}`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <tab.icon className="w-5 h-5" />
+                  <span className="font-medium">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -76,18 +109,18 @@ export const SettingsLayout: React.FC = () => {
             {/* Alt Sekmeler */}
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {mainTabs.find(t => t.id === activeMainTab)?.subTabs.map((subTab) => {
-                const isActive = currentPath === subTab.id;
+                const isActive = currentPath === subTab.path;
                 return (
                   <Link
-                    key={subTab.id}
                     to={subTab.path}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium 
-                             transition-all ${isActive 
-                               ? 'bg-bs-primary text-white shadow-lg shadow-bs-primary/20' 
-                               : 'text-bs-navygri hover:bg-bs-50'}`}
+                    key={subTab.path}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all
+                      ${location.pathname === subTab.path 
+                        ? 'bg-bs-primary text-white hover:text-white' 
+                        : 'text-bs-navygri hover:bg-bs-50 hover:text-bs-navy'}`}
                   >
-                    <subTab.icon className="w-4 h-4" />
-                    {subTab.label}
+                    <subTab.icon className="w-5 h-5" />
+                    <span className="font-medium">{subTab.label}</span>
                   </Link>
                 );
               })}

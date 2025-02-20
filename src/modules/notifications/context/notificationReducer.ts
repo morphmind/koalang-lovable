@@ -6,11 +6,16 @@ type NotificationAction =
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'UPDATE_NOTIFICATION'; payload: Notification }
-  | { type: 'DELETE_NOTIFICATION'; payload: string }
-  | { type: 'MARK_AS_READ'; payload: string }
+  | { type: 'DELETE_NOTIFICATION'; payload: number }
+  | { type: 'MARK_AS_READ'; payload: number }
   | { type: 'MARK_ALL_AS_READ' }
   | { type: 'CLEAR_ALL_NOTIFICATIONS' }
   | { type: 'ERROR'; payload: string };
+
+// Okunmamış bildirimleri say
+const countUnreadNotifications = (notifications: Notification[]): number => {
+  return notifications.filter(n => !n.is_read).length;
+};
 
 export const notificationReducer = (
   state: NotificationState,
@@ -29,7 +34,7 @@ export const notificationReducer = (
         ...state,
         isLoading: false,
         notifications: action.payload,
-        unreadCount: action.payload.filter(n => !n.isRead).length,
+        unreadCount: countUnreadNotifications(action.payload),
         error: null
       };
 
@@ -41,45 +46,48 @@ export const notificationReducer = (
       };
 
     case 'ADD_NOTIFICATION':
+      const newNotifications = [action.payload, ...state.notifications];
       return {
         ...state,
-        notifications: [action.payload, ...state.notifications],
-        unreadCount: state.unreadCount + (action.payload.isRead ? 0 : 1)
+        notifications: newNotifications,
+        unreadCount: countUnreadNotifications(newNotifications)
       };
 
     case 'UPDATE_NOTIFICATION':
+      const updatedNotifications = state.notifications.map(n =>
+        n.id === action.payload.id ? action.payload : n
+      );
       return {
         ...state,
-        notifications: state.notifications.map(n =>
-          n.id === action.payload.id ? action.payload : n
-        ),
-        unreadCount: state.notifications.filter(n => 
-          n.id === action.payload.id ? !action.payload.isRead : !n.isRead
-        ).length
+        notifications: updatedNotifications,
+        unreadCount: countUnreadNotifications(updatedNotifications)
       };
 
     case 'DELETE_NOTIFICATION':
+      const remainingNotifications = state.notifications.filter(n => 
+        n.id !== action.payload
+      );
       return {
         ...state,
-        notifications: state.notifications.filter(n => n.id !== action.payload),
-        unreadCount: state.notifications.filter(n => 
-          !n.isRead && n.id !== action.payload
-        ).length
+        notifications: remainingNotifications,
+        unreadCount: countUnreadNotifications(remainingNotifications)
       };
 
     case 'MARK_AS_READ':
+      const markedNotifications = state.notifications.map(n =>
+        n.id === action.payload ? { ...n, is_read: true } : n
+      );
       return {
         ...state,
-        notifications: state.notifications.map(n =>
-          n.id === action.payload ? { ...n, isRead: true } : n
-        ),
-        unreadCount: state.unreadCount - 1
+        notifications: markedNotifications,
+        unreadCount: countUnreadNotifications(markedNotifications)
       };
 
     case 'MARK_ALL_AS_READ':
+      const allReadNotifications = state.notifications.map(n => ({ ...n, is_read: true }));
       return {
         ...state,
-        notifications: state.notifications.map(n => ({ ...n, isRead: true })),
+        notifications: allReadNotifications,
         unreadCount: 0
       };
 

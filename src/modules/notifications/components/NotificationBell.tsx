@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { Bell } from 'lucide-react';
-import { useNotifications } from '../context/NotificationContext';
+import { useNotification } from '../context/NotificationContext';
 import { NotificationList } from './NotificationList';
 import { useOnClickOutside } from '../../auth/hooks/useOnClickOutside';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { unreadCount } = useNotifications();
+  const { unreadCount } = useNotification();
   const menuRef = useRef<HTMLDivElement>(null);
   const focusTrapRef = useFocusTrap({
     enabled: isOpen,

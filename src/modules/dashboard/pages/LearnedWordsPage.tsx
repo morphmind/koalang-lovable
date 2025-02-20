@@ -7,7 +7,6 @@ import {
   Search,
   Volume2,
   BookmarkCheck,
-  Filter,
   ChevronRight,
   ChevronLeft,
   GraduationCap,
@@ -15,10 +14,14 @@ import {
   Clock,
   ArrowUpRight
 } from 'lucide-react';
-import { Word } from '../../../data/oxford3000.types';
 import words from '../../../data/oxford3000';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../auth';
+
+interface LearningDate {
+  word: string;
+  created_at: string;
+}
 
 export const LearnedWordsPage: React.FC = () => {
   const { user } = useAuth();
@@ -31,6 +34,71 @@ export const LearnedWordsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
+  const formatTimeAgo = (date: string) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diff = now.getTime() - past.getTime();
+    
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    // Daha detaylı zaman gösterimi
+    if (years > 0) {
+      const remainingMonths = months % 12;
+      if (remainingMonths > 0) {
+        return `${years} yıl ${remainingMonths} ay önce`;
+      }
+      return `${years} yıl önce`;
+    }
+    
+    if (months > 0) {
+      const remainingDays = days % 30;
+      if (remainingDays > 0) {
+        return `${months} ay ${remainingDays} gün önce`;
+      }
+      return `${months} ay önce`;
+    }
+    
+    if (weeks > 0) {
+      const remainingDays = days % 7;
+      if (remainingDays > 0) {
+        return `${weeks} hafta ${remainingDays} gün önce`;
+      }
+      return `${weeks} hafta önce`;
+    }
+    
+    if (days > 0) {
+      const remainingHours = hours % 24;
+      if (remainingHours > 0) {
+        return `${days} gün ${remainingHours} saat önce`;
+      }
+      return `${days} gün önce`;
+    }
+    
+    if (hours > 0) {
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes > 0) {
+        return `${hours} saat ${remainingMinutes} dk önce`;
+      }
+      return `${hours} saat önce`;
+    }
+    
+    if (minutes > 0) {
+      const remainingSeconds = seconds % 60;
+      if (remainingSeconds > 0) {
+        return `${minutes} dk ${remainingSeconds} sn önce`;
+      }
+      return `${minutes} dk önce`;
+    }
+    
+    return `${seconds} sn önce`;
+  };
+
   // Öğrenilme tarihlerini yükle
   React.useEffect(() => {
     const loadLearningDates = async () => {
@@ -41,17 +109,20 @@ export const LearnedWordsPage: React.FC = () => {
         const { data, error } = await supabase
           .from('user_progress')
           .select('word, created_at')
-          .eq('user_id', user.id)
-          .eq('learned', true);
+          .match({ user_id: user.id, learned: true })
+          .returns<LearningDate[]>();
 
         if (error) throw error;
 
-        const dates = data.reduce((acc: {[key: string]: string}, item) => {
-          acc[item.word] = item.created_at;
-          return acc;
-        }, {});
+        if (data) {
+          const dates = data.reduce<{[key: string]: string}>((acc, item) => {
+            acc[item.word] = item.created_at;
+            return acc;
+          }, {});
 
-        setLearningDates(dates);
+          console.log('Öğrenme tarihleri:', dates);
+          setLearningDates(dates);
+        }
       } catch (err) {
         console.error('Öğrenilme tarihleri yüklenirken hata:', err);
       } finally {
@@ -140,13 +211,13 @@ export const LearnedWordsPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Başlık */}
-      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative max-w-[1200px] mx-auto hover:shadow-xl transition-all">
+      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative hover:shadow-xl transition-all">
         {/* Gradient Background */}
         <div className="relative bg-gradient-to-br from-bs-primary to-bs-800 p-8">
           <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5 pointer-events-none" />
           
           <div className="relative z-10">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 max-w-[1200px] mx-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
@@ -182,7 +253,7 @@ export const LearnedWordsPage: React.FC = () => {
       </div>
 
       {/* Filtreler ve Arama */}
-      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 p-6 sm:p-8 max-w-[1200px] mx-auto hover:shadow-xl transition-all">
+      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 p-6 sm:p-8 hover:shadow-xl transition-all">
         <div className="flex flex-col sm:flex-row gap-4 items-stretch">
           {/* Arama */}
           <div className="flex-1 relative">
@@ -238,17 +309,17 @@ export const LearnedWordsPage: React.FC = () => {
       </div>
 
       {/* Kelime Listesi */}
-      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative max-w-[1200px] mx-auto hover:shadow-xl transition-all">
+      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative hover:shadow-xl transition-all">
         {filteredWords.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="w-24 h-24 rounded-2xl bg-bs-50 flex items-center justify-center mx-auto mb-6
+          <div key="empty-state" className="p-16 text-center">
+            <div key="empty-icon" className="w-24 h-24 rounded-2xl bg-bs-50 flex items-center justify-center mx-auto mb-6
                           ring-8 ring-bs-50/50">
               <BookOpen className="w-12 h-12 text-bs-primary" />
             </div>
-            <h3 className="text-xl font-semibold text-bs-navy mb-3">
+            <h3 key="empty-title" className="text-xl font-semibold text-bs-navy mb-3">
               Henüz kelime bulunamadı
             </h3>
-            <p className="text-bs-navygri max-w-md mx-auto text-lg">
+            <p key="empty-message" className="text-bs-navygri max-w-md mx-auto text-lg">
               {searchQuery 
                 ? 'Arama kriterlerinize uygun kelime bulunamadı.' 
                 : 'Henüz hiç kelime öğrenmediniz.'}
@@ -256,10 +327,10 @@ export const LearnedWordsPage: React.FC = () => {
           </div>
         ) : (
           <>
-          <div className="divide-y divide-bs-100 relative min-h-[600px]">
-            {currentWords.map((word) => (
+          <div key="word-list" className="divide-y divide-bs-100 relative min-h-[600px]">
+            {currentWords.map((word, index) => (
               <div
-                key={word.word}
+                key={`word-${word.word}-${index}`}
                 className="p-6 sm:p-8 hover:bg-gradient-to-br from-bs-50/50 to-white transition-all
                          hover:shadow-lg flex flex-col sm:flex-row sm:items-center gap-6 group
                          relative overflow-hidden border-l-4 border-l-transparent hover:border-l-bs-primary"
@@ -283,17 +354,9 @@ export const LearnedWordsPage: React.FC = () => {
                                    'bg-pink-50 text-pink-600'}`}>
                       {word.level}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-bs-navygri">
+                    <div className="flex items-center gap-2 text-xs text-bs-navygri/60">
                       <Clock className="w-4 h-4" />
-                      <span>
-                        {learningDates[word.word] 
-                          ? new Date(learningDates[word.word]).toLocaleDateString('tr-TR', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })
-                          : 'Tarih bilgisi yok'}
-                      </span>
+                      <span>{learningDates[word.word] ? formatTimeAgo(learningDates[word.word]) : 'Tarih bilgisi yok'}</span>
                     </div>
                   </div>
                   <p className="text-lg text-bs-navygri group-hover:text-bs-navy transition-colors mb-4">
@@ -370,24 +433,23 @@ export const LearnedWordsPage: React.FC = () => {
                   .map((page, index, array) => {
                     // Eğer sayfa numaraları arasında boşluk varsa ... göster
                     if (index > 0 && page - array[index - 1] > 1) {
-                      return (
-                        <React.Fragment key={`dots-${page}`}>
-                          <span className="text-bs-navygri px-2">...</span>
-                          <button
-                            onClick={() => handlePageChange(page)}
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all
-                                    ${currentPage === page
-                                      ? 'bg-bs-primary text-white shadow-lg shadow-bs-primary/20'
-                                      : 'text-bs-navygri hover:bg-bs-50 hover:text-bs-primary'}`}
-                          >
-                            {page}
-                          </button>
-                        </React.Fragment>
-                      );
+                      return [
+                        <span key={`pagination-dots-${page}`} className="text-bs-navygri px-2">...</span>,
+                        <button
+                          key={`pagination-btn-${page}`}
+                          onClick={() => handlePageChange(page)}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all
+                                  ${currentPage === page
+                                    ? 'bg-bs-primary text-white shadow-lg shadow-bs-primary/20'
+                                    : 'text-bs-navygri hover:bg-bs-50 hover:text-bs-primary'}`}
+                        >
+                          {page}
+                        </button>
+                      ];
                     }
                     return (
                       <button
-                        key={page}
+                        key={`pagination-page-${page}`}
                         onClick={() => handlePageChange(page)}
                         className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all
                                 ${currentPage === page

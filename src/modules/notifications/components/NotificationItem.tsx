@@ -1,91 +1,101 @@
 import React from 'react';
-import { useNotifications } from '../context/NotificationContext';
-import { formatDistanceToNow } from 'date-fns';
+import { useNotification } from '../context/NotificationContext';
+import { formatDistanceToNow, isValid } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Bell, Award, BookOpen, AlertCircle, Trash2 } from 'lucide-react';
-import { Notification } from '../types';
+import { Bell, Award, BookOpen, AlertCircle, Trash2, XCircle } from 'lucide-react';
+import { Notification } from '../types/index';
 
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
 }
 
-export const NotificationItem: React.FC<NotificationItemProps> = ({
+const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
   onClick
 }) => {
-  const { markAsRead, deleteNotification } = useNotifications();
+  const { markAsRead, deleteNotification } = useNotification();
 
   const getIcon = () => {
+    const messageLower = notification.message.toLowerCase();
+    // Check for both "not learned" message variants
+    if (notification.type === 'learning' && 
+        (messageLower.includes('kelime öğrenmediniz') || 
+         messageLower.includes('kelime öğrenilmedi olarak işaretlendi'))) {
+      return XCircle;
+    }
+
     switch (notification.type) {
       case 'learning':
         return BookOpen;
       case 'quiz':
         return Award;
       case 'system':
-        return AlertCircle;
       default:
         return Bell;
     }
   };
 
-  const Icon = getIcon();
-
-  const handleClick = (e: React.MouseEvent) => {
+  const handleMarkAsRead = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!notification.isRead) {
-      markAsRead(notification.id);
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
     }
     onClick();
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteNotification(notification.id);
+    await deleteNotification(notification.id);
   };
+
+  const timeAgo = () => {
+    try {
+      const date = new Date(notification.created_at);
+      if (!isValid(date)) return 'Geçersiz tarih';
+      return formatDistanceToNow(date, { addSuffix: true, locale: tr });
+    } catch (error) {
+      return 'Geçersiz tarih';
+    }
+  };
+
+  const Icon = getIcon();
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={handleClick}
-      onKeyPress={(e) => e.key === 'Enter' && handleClick(e as any)}
+      onClick={handleMarkAsRead}
+      onKeyPress={(e) => e.key === 'Enter' && handleMarkAsRead(e as any)}
       className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer
-                relative ${notification.isRead ? 'opacity-75' : ''}`}
+                relative ${notification.is_read ? 'opacity-75' : ''}`}
     >
-      {/* Icon */}
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                    ${notification.isRead ? 'bg-gray-100' : 'bg-bs-50'}`}>
-        <Icon className={`w-4 h-4 ${notification.isRead ? 'text-gray-500' : 'text-bs-primary'}`} />
+      <div className="flex-shrink-0 mt-1">
+        <Icon className="w-5 h-5 text-bs-primary" />
       </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${notification.isRead ? 'text-bs-navygri' : 'text-bs-navy'}`}>
+      <div className="flex-grow min-w-0">
+        <h4 className="text-sm font-medium text-bs-navy">
           {notification.title}
-        </p>
-        <p className="text-xs text-bs-navygri mt-0.5 line-clamp-2">
+        </h4>
+        <p className="text-sm text-bs-navygri mt-0.5 break-words">
           {notification.message}
         </p>
         <p className="text-[10px] text-bs-navygri/75 mt-1">
-          {formatDistanceToNow(notification.createdAt, { addSuffix: true, locale: tr })}
+          {timeAgo()}
         </p>
       </div>
-
-      {/* Delete Button */}
+      {!notification.is_read && (
+        <div className="absolute top-3 right-12 w-2 h-2 bg-blue-500 rounded-full" />
+      )}
       <button
         onClick={handleDelete}
-        className="p-1 text-bs-navygri hover:text-red-500 hover:bg-red-50 rounded-lg 
-                 transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-3 right-4 p-1 text-gray-400 hover:text-red-500 transition-colors"
         title="Bildirimi sil"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 size={16} />
       </button>
-
-      {/* Unread Indicator */}
-      {!notification.isRead && (
-        <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-bs-primary" />
-      )}
     </div>
   );
 };
+
+export default NotificationItem;

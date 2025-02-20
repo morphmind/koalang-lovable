@@ -25,14 +25,14 @@ export const AchievementsPage: React.FC = () => {
   };
 
   // A1 seviyesi tamamlandı mı kontrolü
-  const isA1Completed = (learnedCount: number) => {
+  const isA1Completed = () => {
     const learnedA1Count = getLearnedA1WordCount(learnedWords);
     const totalA1Count = getA1WordCount();
     return learnedA1Count === totalA1Count && totalA1Count > 0;
   };
 
   // A1 ilerleme yüzdesini hesapla
-  const calculateA1Progress = (learnedCount: number) => {
+  const calculateA1Progress = () => {
     const learnedA1Count = getLearnedA1WordCount(learnedWords);
     const totalA1Count = getA1WordCount();
     return totalA1Count > 0 ? Math.round((learnedA1Count / totalA1Count) * 100) : 0;
@@ -121,9 +121,9 @@ export const AchievementsPage: React.FC = () => {
         icon: Star,
         title: 'A1 Seviyesi Tamamlandı',
         description: 'A1 seviyesindeki tüm kelimeleri öğrendiniz',
-        progress: calculateA1Progress(learnedCount),
+        progress: calculateA1Progress(),
         color: 'from-teal-500 to-emerald-600',
-        earned: isA1Completed(learnedCount),
+        earned: isA1Completed(),
         total: getA1WordCount(),
         current: getLearnedA1WordCount(learnedWords)
       },

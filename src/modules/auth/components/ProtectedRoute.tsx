@@ -1,6 +1,4 @@
-
 import React, { useEffect, useCallback } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAuthPopup } from '../hooks/useAuthPopup';
 import { LoadingScreen } from '../../../components/LoadingScreen';
@@ -12,28 +10,43 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const { openAuthPopup } = useAuthPopup();
-  const location = useLocation();
+  const authCheckRef = React.useRef(false);
 
-  useEffect(() => {
+  const checkAuth = useCallback(() => {
     if (!isLoading && !user) {
-      console.log('🔴 Kullanıcı girişi yok, auth popup açılıyor...', { pathname: location.pathname });
+      console.log('🔴 Kullanıcı girişi yok, auth popup açılıyor...');
       openAuthPopup();
-    } else if (user) {
+      authCheckRef.current = true;
+      return false;
+    }
+    if (user) {
       console.log('🟢 Kullanıcı girişi var:', {
         username: user.username,
         email: user.email,
-        pathname: location.pathname
+      });
+      authCheckRef.current = true;
+    }
+    return true;
+  }, [user, isLoading, openAuthPopup]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const isAuthenticated = checkAuth();
+      console.log('🟡 Auth durumu kontrol edildi:', {
+        isAuthenticated,
+        isLoading,
+        isAuthChecked: authCheckRef.current
       });
     }
-  }, [user, isLoading, openAuthPopup, location]);
+  }, [checkAuth, isLoading, user]);
 
   if (isLoading) {
     return <LoadingScreen message="Oturumunuz kontrol ediliyor..." />;
   }
 
-  if (!user) {
-    console.log('🔴 Kullanıcı girişi yok, Login\'e yönlendiriliyor...');
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!user && !authCheckRef.current) {
+    console.log('🔴 Kullanıcı girişi yok, null döndürülüyor...');
+    return null;
   }
 
   console.log('🟢 Kullanıcı girişi var, içerik gösteriliyor...');

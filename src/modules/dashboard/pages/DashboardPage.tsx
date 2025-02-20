@@ -9,8 +9,21 @@ import { useDashboard } from '../context/DashboardContext';
 import { useWords } from '../../words/context/WordContext';
 import { useProgress } from '../hooks/useProgress';
 import { Word } from '../../../data/oxford3000.types';
-import { words } from '../../../data/oxford3000';
 import { useAuth } from '../../auth';
+import { supabase } from '../../../lib/supabase';
+import { TypedSupabaseClient } from '../../notifications/types';
+import { NotificationInsert } from '../../notifications/types';
+
+interface Activity {
+  id: number;
+  type: 'learning' | 'quiz';
+  title: string;
+  description: string;
+  result: 'success' | 'failure';
+  timestamp: Date;
+}
+
+const client = supabase as TypedSupabaseClient;
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -31,7 +44,7 @@ export const DashboardPage: React.FC = () => {
   const [suggestedWords, setSuggestedWords] = React.useState<Word[]>([]);
   const [weeklyProgress, setWeeklyProgress] = React.useState<number[]>([]);
   const [levelDistribution, setLevelDistribution] = React.useState<{[key: string]: number}>({});
-  const [recentActivities, setRecentActivities] = React.useState([]);
+  const [recentActivities, setRecentActivities] = React.useState<Activity[]>([]);
 
   // İlerleme verilerini yükle
   React.useEffect(() => {
@@ -53,7 +66,7 @@ export const DashboardPage: React.FC = () => {
         setLevelDistribution(levelData);
 
         // Son aktiviteleri ayarla
-        setRecentActivities(activities);
+        setRecentActivities(activities as Activity[]);
       } catch (err) {
         console.error('İlerleme verileri yüklenirken hata:', err);
       }
@@ -79,11 +92,19 @@ export const DashboardPage: React.FC = () => {
   }, [user, stats.learnedWords, getSuggestedWords]);
 
   const handleLearnWord = async (word: Word) => {
+    if (!user) return;
+
     try {
+      console.log('Kelime öğrenme başladı:', word.word);
+
+      // Kelimeyi öğrenildi olarak işaretle
       await toggleWordLearned(word.word);
-      // Önerilen kelimeleri ve istatistikleri güncelle
+      console.log('Kelime durumu güncellendi');
+
+      // Önerilen kelimeleri güncelle
       const suggested = await getSuggestedWords(6);
       setSuggestedWords(suggested);
+      console.log('Önerilen kelimeler güncellendi');
     } catch (err) {
       console.error('Kelime öğrenildi olarak işaretlenirken hata:', err);
     }
@@ -114,7 +135,7 @@ export const DashboardPage: React.FC = () => {
   if (error || progressError) {
     return (
       <div className="p-4">
-        <ErrorMessage message={error || progressError} />
+        <ErrorMessage message={error || progressError || 'Bir hata oluştu'} />
       </div>
     );
   }

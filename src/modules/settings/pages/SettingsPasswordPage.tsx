@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
-import { Key, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Key, Eye, EyeOff, AlertCircle, CheckCircle2, Shield } from 'lucide-react';
 
 export const SettingsPasswordPage: React.FC = () => {
   const { updatePassword, isLoading, error } = useSettings();
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [lastPasswordUpdate, setLastPasswordUpdate] = useState("Bugün");
+
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -77,20 +77,29 @@ export const SettingsPasswordPage: React.FC = () => {
   const passwordStrength = checkPasswordStrength(formData.newPassword);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b border-bs-100">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-bs-50 flex items-center justify-center">
-            <Key className="w-5 h-5 text-bs-primary" />
-          </div>
-          <div className="pt-1">
-            <h2 className="text-lg font-semibold text-bs-navy">
-              Şifre Ayarları
-            </h2>
-            <p className="text-sm text-bs-navygri">
-              Hesap şifrenizi güncelleyin
-            </p>
+    <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden relative hover:shadow-xl transition-all">
+      <div className="relative bg-gradient-to-br from-bs-primary to-bs-800 p-8">
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <Key className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-white mb-1">
+                Şifre Ayarları
+              </h1>
+              <p className="text-white/80 flex items-center gap-2">
+                <span>Hesap şifrenizi güncelleyin ve güvenliğinizi artırın</span>
+                <span className="w-1 h-1 rounded-full bg-white/30" />
+                <span>Güvenlik</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-white/80 text-sm">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full backdrop-blur-sm">
+                <Shield className="w-4 h-4" />
+                <span>Son güncelleme: {lastPasswordUpdate}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -116,7 +125,7 @@ export const SettingsPasswordPage: React.FC = () => {
             </label>
             <div className="relative">
               <input
-                type={showPasswords.current ? 'text' : 'password'}
+                type={showCurrentPassword ? 'text' : 'password'}
                 value={formData.currentPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
                 className="w-full pr-12 pl-4 py-3 rounded-lg border border-bs-100 focus:ring-2 
@@ -125,10 +134,10 @@ export const SettingsPasswordPage: React.FC = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
-                {showPasswords.current ? (
+                {showCurrentPassword ? (
                   <EyeOff className="w-5 h-5 text-bs-navygri" />
                 ) : (
                   <Eye className="w-5 h-5 text-bs-navygri" />
@@ -144,7 +153,7 @@ export const SettingsPasswordPage: React.FC = () => {
             </label>
             <div className="relative">
               <input
-                type={showPasswords.new ? 'text' : 'password'}
+                type={showNewPassword ? 'text' : 'password'}
                 value={formData.newPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
                 className="w-full pr-12 pl-4 py-3 rounded-lg border border-bs-100 focus:ring-2 
@@ -153,10 +162,10 @@ export const SettingsPasswordPage: React.FC = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
-                {showPasswords.new ? (
+                {showNewPassword ? (
                   <EyeOff className="w-5 h-5 text-bs-navygri" />
                 ) : (
                   <Eye className="w-5 h-5 text-bs-navygri" />
@@ -172,7 +181,7 @@ export const SettingsPasswordPage: React.FC = () => {
             </label>
             <div className="relative">
               <input
-                type={showPasswords.confirm ? 'text' : 'password'}
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 className="w-full pr-12 pl-4 py-3 rounded-lg border border-bs-100 focus:ring-2 
@@ -181,10 +190,10 @@ export const SettingsPasswordPage: React.FC = () => {
               />
               <button
                 type="button"
-                onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2"
               >
-                {showPasswords.confirm ? (
+                {showConfirmPassword ? (
                   <EyeOff className="w-5 h-5 text-bs-navygri" />
                 ) : (
                   <Eye className="w-5 h-5 text-bs-navygri" />

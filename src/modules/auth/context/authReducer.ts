@@ -1,35 +1,37 @@
+import { AuthState } from '../types';
 
-import { AuthState, User } from '../types';
-
-type AuthAction =
-  | { type: 'SET_USER'; payload: User }
-  | { type: 'CLEAR_USER' }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null };
+type AuthAction = 
+  | { type: 'AUTH_START' }
+  | { type: 'AUTH_SUCCESS'; payload: any }
+  | { type: 'AUTH_FAILURE'; payload: string }
+  | { type: 'LOGOUT' };
 
 export const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
-    case 'SET_USER':
+    case 'AUTH_START':
       return {
         ...state,
+        isLoading: true,
+        error: null
+      };
+    case 'AUTH_SUCCESS':
+      return {
+        ...state,
+        isLoading: false,
         user: action.payload,
         error: null
       };
-    case 'CLEAR_USER':
+    case 'AUTH_FAILURE':
+      return {
+        ...state,
+        isLoading: false,
+        error: action.payload
+      };
+    case 'LOGOUT':
       return {
         ...state,
         user: null,
         error: null
-      };
-    case 'SET_LOADING':
-      return {
-        ...state,
-        isLoading: action.payload
-      };
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload
       };
     default:
       return state;

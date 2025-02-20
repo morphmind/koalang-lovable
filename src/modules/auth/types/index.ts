@@ -1,13 +1,16 @@
-
-import { Session } from '@supabase/supabase-js';
-
 export interface User {
   id: string;
   email: string;
   username: string;
-  avatar?: string | null;
+  avatar?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface LoginCredentials {
@@ -19,15 +22,12 @@ export interface RegisterCredentials extends LoginCredentials {
   username: string;
 }
 
-export interface AuthState {
+export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-}
-
-export interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<Session>;
-  register: (credentials: RegisterCredentials) => Promise<Session>;
-  signOut: () => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<void>;
+  logout: (navigate?: (path: string) => void) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }

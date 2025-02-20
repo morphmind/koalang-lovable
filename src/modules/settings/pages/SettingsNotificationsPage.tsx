@@ -2,8 +2,9 @@ import React from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
-import { Bell, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Bell, AlertCircle, CheckCircle2, Volume2, Vibrate, Mail } from 'lucide-react';
 import { Switch } from '../../../components/ui/switch';
+import { toast } from 'react-hot-toast';
 
 export const SettingsNotificationsPage: React.FC = () => {
   const { profile, updateNotificationPreferences, isLoading, error } = useSettings();
@@ -11,55 +12,77 @@ export const SettingsNotificationsPage: React.FC = () => {
 
   const notificationSettings = [
     {
+      id: 'system_notifications',
+      label: 'Sistem Bildirimleri',
+      description: 'Sistem güncellemeleri ve önemli duyurular',
+      icon: <Bell className="w-5 h-5 text-bs-primary" />
+    },
+    {
+      id: 'learning_notifications',
+      label: 'Öğrenme Bildirimleri',
+      description: 'Kelime öğrenme ve ilerleme bildirimleri',
+      icon: <Bell className="w-5 h-5 text-bs-primary" />
+    },
+    {
+      id: 'quiz_notifications',
+      label: 'Quiz Bildirimleri',
+      description: 'Quiz sonuçları ve hatırlatıcıları',
+      icon: <Bell className="w-5 h-5 text-bs-primary" />
+    },
+    {
       id: 'email_notifications',
-      label: 'Email Bildirimleri',
-      description: 'Önemli güncellemeler ve bilgilendirmeler için email bildirimleri alın'
+      label: 'E-posta Bildirimleri',
+      description: 'Önemli güncellemeler için e-posta bildirimleri',
+      icon: <Mail className="w-5 h-5 text-bs-primary" />
     },
     {
-      id: 'push_notifications',
-      label: 'Anlık Bildirimler',
-      description: 'Tarayıcı üzerinden anlık bildirimler alın'
+      id: 'sound_enabled',
+      label: 'Bildirim Sesi',
+      description: 'Yeni bildirimler için ses çal',
+      icon: <Volume2 className="w-5 h-5 text-bs-primary" />
     },
     {
-      id: 'quiz_reminders',
-      label: 'Sınav Hatırlatıcıları',
-      description: 'Sınav zamanı geldiğinde hatırlatma bildirimleri alın'
-    },
-    {
-      id: 'learning_reminders',
-      label: 'Öğrenme Hatırlatıcıları',
-      description: 'Günlük öğrenme hedefleriniz için hatırlatmalar alın'
-    },
-    {
-      id: 'achievement_notifications',
-      label: 'Başarı Bildirimleri',
-      description: 'Yeni başarılar kazandığınızda bildirim alın'
-    },
-    {
-      id: 'weekly_summary',
-      label: 'Haftalık Özet',
-      description: 'Her hafta ilerlemeniz hakkında detaylı bir rapor alın'
+      id: 'vibration_enabled',
+      label: 'Titreşim',
+      description: 'Yeni bildirimler için titreşim',
+      icon: <Vibrate className="w-5 h-5 text-bs-primary" />
     }
   ];
 
   const handleToggle = async (settingId: string) => {
-    if (!profile?.notification_preferences) return;
+    if (!profile) {
+      toast.error('Profil bilgileri yüklenemedi');
+      return;
+    }
 
     try {
+      // Mevcut tercihleri al veya boş bir obje oluştur
+      const currentPreferences = profile.notification_preferences || {};
+      
+      // Yeni tercihleri oluştur
       const updatedPreferences = {
-        ...profile.notification_preferences,
-        [settingId]: !profile.notification_preferences[settingId as keyof typeof profile.notification_preferences]
+        ...currentPreferences,
+        [settingId]: !currentPreferences[settingId]
       };
 
+      // Tercihleri güncelle
       await updateNotificationPreferences(updatedPreferences);
+      
+      // Başarı mesajı göster
       setSuccessMessage('Bildirim tercihleri başarıyla güncellendi.');
-
-      // 3 saniye sonra başarı mesajını kaldır
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
+      setTimeout(() => setSuccessMessage(null), 3000);
+      
+      // Toast mesajı göster
+      toast.success('Bildirim tercihleri güncellendi', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
     } catch (err) {
       console.error('Bildirim tercihleri güncellenirken hata:', err);
+      toast.error('Bildirim tercihleri güncellenirken bir hata oluştu', {
+        duration: 5000,
+        position: 'bottom-right',
+      });
     }
   };
 
@@ -109,13 +132,16 @@ export const SettingsNotificationsPage: React.FC = () => {
               className="flex items-start justify-between gap-4 p-4 rounded-xl border border-bs-100
                        hover:border-bs-primary hover:shadow-lg transition-all hover:-translate-y-0.5"
             >
-              <div className="flex-1">
-                <div className="font-medium text-bs-navy mb-1">{setting.label}</div>
-                <div className="text-sm text-bs-navygri">{setting.description}</div>
+              <div className="flex items-center space-x-4">
+                {setting.icon}
+                <div>
+                  <div className="font-medium text-bs-navy">{setting.label}</div>
+                  <div className="text-sm text-bs-navygri">{setting.description}</div>
+                </div>
               </div>
               <div className="flex-shrink-0">
                 <Switch
-                  checked={profile?.notification_preferences?.[setting.id as keyof typeof profile.notification_preferences] ?? false}
+                  checked={profile?.notification_preferences?.[setting.id] ?? false}
                   onChange={() => handleToggle(setting.id)}
                   size="md"
                 />
@@ -131,9 +157,9 @@ export const SettingsNotificationsPage: React.FC = () => {
             <p className="font-medium mb-1">Önemli Not</p>
             <p>Bildirim tercihlerinizi değiştirdiğinizde:</p>
             <ul className="list-disc ml-4 mt-2 space-y-1">
-              <li>Değişiklikler anında uygulanır.</li>
-              <li>Email bildirimleri için email adresinizin doğrulanmış olması gerekir.</li>
-              <li>Anlık bildirimler için tarayıcı izinlerini kabul etmeniz gerekebilir.</li>
+              <li>Değişiklikler anında uygulanır</li>
+              <li>Email bildirimleri için email adresinizin doğrulanmış olması gerekir</li>
+              <li>Tarayıcı bildirimlerine izin vermeniz gerekebilir</li>
             </ul>
           </div>
         </div>

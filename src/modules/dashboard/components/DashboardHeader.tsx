@@ -1,22 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { User } from '../../auth/types';
 import { BookOpen, Award, Activity } from 'lucide-react';
-import { useWords } from '../../words/context/WordContext';
 import { useDashboard } from '../context/DashboardContext';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
 import { useLocation } from 'react-router-dom';
 
-interface Stats {
-  learnedWords: number;
-  successRate: number;
-}
-
 interface DashboardHeaderProps {
   user: User;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  showLearned: boolean;
+  setShowLearned: (show: boolean) => void;
+  setShowQuiz: (show: boolean) => void;
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user }) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
+  user, 
+  searchQuery, 
+  setSearchQuery, 
+  showLearned, 
+  setShowLearned,
+  setShowQuiz 
+}) => {
   const { stats: dashboardStats, isLoading, error } = useDashboard();
   const location = useLocation();
   const isMainDashboard = location.pathname === '/dashboard';

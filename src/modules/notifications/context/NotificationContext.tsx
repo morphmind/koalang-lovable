@@ -1,169 +1,269 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import { NotificationState, Notification } from '../types';
-import { notificationReducer } from './notificationReducer';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { Database } from '../../../lib/database.types';
+import { Notification, NotificationType } from '../types/index';
 
-const initialState: NotificationState = {
-  notifications: [],
-  unreadCount: 0,
-  isLoading: false,
-  error: null
-};
+// Override the 'type' field from the DB types with our own NotificationType
+type Tables = Database['public']['Tables'];
 
-interface NotificationContextType extends NotificationState {
-  markAsRead: (id: string) => Promise<void>;
+// Override the DB types so that the 'type' field is our NotificationType, not a literal 'notification'
+type DbNotification = Omit<Tables['notifications']['Row'], 'type'> & { type: NotificationType };
+type DbNotificationInsert = Omit<Tables['notifications']['Insert'], 'type'> & { type: NotificationType };
+type DbNotificationUpdate = Omit<Tables['notifications']['Update'], 'type'> & { type?: NotificationType };
+
+// Conversion functions become identity functions
+const convertToDbType = (type: NotificationType): NotificationType => type;
+const convertFromDbType = (dbType: NotificationType): NotificationType => dbType;
+
+const mapDbToNotification = (dbNotification: DbNotification): Notification => ({
+  id: dbNotification.id,
+  user_id: dbNotification.user_id,
+  type: convertFromDbType(dbNotification.type),
+  created_at: new Date(dbNotification.created_at),
+  title: dbNotification.title,
+  message: dbNotification.message,
+  is_read: dbNotification.is_read
+});
+
+interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  showNotification: (notification: { type: NotificationType; title: string; message: string }) => void;
+  hideNotification: (id: number) => void;
+  markAsRead: (id: number) => Promise<void>;
+  deleteNotification: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
-  deleteNotification: (id: string) => Promise<void>;
-  clearAllNotifications: () => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(notificationReducer, initialState);
+export const NotificationProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Bildirimleri yükle
-  const loadNotifications = useCallback(async () => {
+  const updateUnreadCount = useCallback((notifications: Notification[]) => {
+    setUnreadCount(notifications.filter(n => !n.is_read).length);
+  }, []);
+
+  const fetchNotifications = useCallback(async () => {
     try {
-      dispatch({ type: 'FETCH_START' });
-      
-      const { data: notifications, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
         .from('notifications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      dispatch({ 
-        type: 'FETCH_SUCCESS', 
-        payload: notifications.map(n => ({
-          ...n,
-          createdAt: new Date(n.created_at)
-        }))
-      });
+      if (data) {
+        const formattedNotifications = data.map(mapDbToNotification);
+        setNotifications(formattedNotifications);
+        updateUnreadCount(formattedNotifications);
+      }
     } catch (error) {
-      dispatch({ type: 'FETCH_ERROR', payload: error.message });
+      console.error('Bildirimler yüklenirken hata:', error);
     }
-  }, []);
+  }, [updateUnreadCount]);
 
-  // Bildirimi okundu olarak işaretle
-  const markAsRead = useCallback(async (id: string) => {
+  const setupRealtimeSubscription = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const channel = supabase
+      .channel('public:notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newNotification: DbNotification = payload.new;
+            const formattedNotification = mapDbToNotification(newNotification);
+            setNotifications(prev => [formattedNotification, ...prev]);
+            updateUnreadCount([formattedNotification, ...notifications]);
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setNotifications(prev => prev.filter(n => n.id !== deletedId));
+            updateUnreadCount(notifications.filter(n => n.id !== deletedId));
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNotification: DbNotification = payload.new;
+            const formattedNotification = mapDbToNotification(updatedNotification);
+            setNotifications(prev =>
+              prev.map(n => n.id === formattedNotification.id ? formattedNotification : n)
+            );
+            updateUnreadCount(
+              notifications.map(n => n.id === formattedNotification.id ? formattedNotification : n)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [notifications, updateUnreadCount]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const cleanup = setupRealtimeSubscription();
+    return () => {
+      cleanup?.then(unsubscribe => unsubscribe?.());
+    };
+  }, [fetchNotifications, setupRealtimeSubscription]);
+
+  const showNotification = async ({ type, title, message }: { type: NotificationType; title: string; message: string }) => {
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newNotification: DbNotificationInsert = {
+        type: convertToDbType(type),
+        title,
+        message,
+        user_id: user.id,
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id);
+        .insert(newNotification)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      dispatch({ type: 'MARK_AS_READ', payload: id });
+      if (data) {
+        const formattedNotification = mapDbToNotification(data);
+        setNotifications(prev => [formattedNotification, ...prev]);
+        updateUnreadCount([formattedNotification, ...notifications]);
+      }
     } catch (error) {
-      dispatch({ type: 'ERROR', payload: error.message });
+      console.error('Bildirim oluşturulurken hata:', error);
     }
-  }, []);
+  };
 
-  // Tüm bildirimleri okundu olarak işaretle
-  const markAllAsRead = useCallback(async () => {
+  const hideNotification = async (id: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .delete()
+        .match({ id, user_id: user.id });
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Bildirim silinirken hata:', error);
+    }
+  };
+
+  const markAsRead = async (id: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true } as DbNotificationUpdate)
+        .match({ id, user_id: user.id });
+
+      if (error) throw error;
+
+      const updatedNotifications = notifications.map(n =>
+        n.id === id ? { ...n, is_read: true } : n
+      );
+
+      setNotifications(updatedNotifications);
+      updateUnreadCount(updatedNotifications);
+    } catch (error) {
+      console.error('Bildirim okundu olarak işaretlenirken hata:', error);
+    }
+  };
+
+  const deleteNotification = async (id: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .match({ id, user_id: user.id });
+
+      if (error) throw error;
+
+      const updatedNotifications = notifications.filter(n => n.id !== id);
+      setNotifications(updatedNotifications);
+      updateUnreadCount(updatedNotifications);
+    } catch (error) {
+      console.error('Bildirim silinirken hata:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true } as DbNotificationUpdate)
+        .eq('user_id', user.id)
         .eq('is_read', false);
 
       if (error) throw error;
 
-      dispatch({ type: 'MARK_ALL_AS_READ' });
+      const updatedNotifications = notifications.map(n => ({ ...n, is_read: true }));
+      setNotifications(updatedNotifications);
+      updateUnreadCount(updatedNotifications);
     } catch (error) {
-      dispatch({ type: 'ERROR', payload: error.message });
+      console.error('Tüm bildirimler okundu olarak işaretlenirken hata:', error);
     }
-  }, []);
+  };
 
-  // Bildirimi sil
-  const deleteNotification = useCallback(async (id: string) => {
+  const deleteAllNotifications = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      dispatch({ type: 'DELETE_NOTIFICATION', payload: id });
+      setNotifications([]);
+      updateUnreadCount([]);
     } catch (error) {
-      dispatch({ type: 'ERROR', payload: error.message });
+      console.error('Tüm bildirimler silinirken hata:', error);
     }
-  }, []);
-
-  // Tüm bildirimleri temizle
-  const clearAllNotifications = useCallback(async () => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .not('id', 'is', null);
-
-      if (error) throw error;
-
-      dispatch({ type: 'CLEAR_ALL_NOTIFICATIONS' });
-    } catch (error) {
-      dispatch({ type: 'ERROR', payload: error.message });
-    }
-  }, []);
-
-  // Realtime subscription
-  React.useEffect(() => {
-    const subscription = supabase
-      .channel('notifications')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'notifications' 
-      }, payload => {
-        switch (payload.eventType) {
-          case 'INSERT':
-            dispatch({ 
-              type: 'ADD_NOTIFICATION', 
-              payload: {
-                ...payload.new,
-                createdAt: new Date(payload.new.created_at)
-              }
-            });
-            break;
-          case 'UPDATE':
-            dispatch({ 
-              type: 'UPDATE_NOTIFICATION', 
-              payload: {
-                ...payload.new,
-                createdAt: new Date(payload.new.created_at)
-              }
-            });
-            break;
-          case 'DELETE':
-            dispatch({ 
-              type: 'DELETE_NOTIFICATION', 
-              payload: payload.old.id 
-            });
-            break;
-        }
-      })
-      .subscribe();
-
-    // Initial load
-    loadNotifications();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [loadNotifications]);
+  };
 
   return (
-    <NotificationContext.Provider 
-      value={{ 
-        ...state,
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        unreadCount,
+        showNotification,
+        hideNotification,
         markAsRead,
-        markAllAsRead,
         deleteNotification,
-        clearAllNotifications
+        markAllAsRead,
+        deleteAllNotifications,
       }}
     >
       {children}
@@ -171,10 +271,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
-export const useNotifications = () => {
+export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error('useNotification must be used within a NotificationProvider');
   }
   return context;
 };

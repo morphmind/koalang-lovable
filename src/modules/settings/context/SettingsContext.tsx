@@ -116,9 +116,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       if (error) throw error;
 
+      // Tüm profil bilgisini koru, sadece notification_preferences'ı güncelle
       dispatch({ 
         type: 'UPDATE_SUCCESS', 
-        payload: { notification_preferences: updatedPreferences } 
+        payload: { 
+          ...state.profile,
+          notification_preferences: updatedPreferences 
+        } 
       });
     } catch (err) {
       console.error('Bildirim tercihleri güncellenirken hata:', err);

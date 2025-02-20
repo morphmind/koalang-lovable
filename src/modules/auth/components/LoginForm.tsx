@@ -105,6 +105,19 @@ export const LoginForm: React.FC = () => {
             Beni hatırla
           </label>
         </div>
+
+        <div className="text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              const event = new CustomEvent('switchAuthTab', { detail: 'reset-password' });
+              window.dispatchEvent(event);
+            }}
+            className="font-medium text-bs-primary hover:text-bs-800"
+          >
+            Şifremi unuttum
+          </button>
+        </div>
       </div>
 
       {/* Auth Error */}

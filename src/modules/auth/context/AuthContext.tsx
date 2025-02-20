@@ -1,244 +1,277 @@
-
-import React, { createContext, useReducer, useContext, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../../../lib/supabase';
+import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import { AuthState, AuthContextType, LoginCredentials, RegisterCredentials } from '../types';
 import { authReducer } from './authReducer';
-import { AuthContextType, User, LoginCredentials, RegisterCredentials } from '../types';
+import { supabase } from '../../../lib/supabase';
+import { AuthError, AuthErrorType } from '../utils/errors';
 
-const initialState = {
+const initialState: AuthState = {
   user: null,
   isLoading: true,
-  error: null
+  error: null,
 };
 
-const AuthContext = createContext<AuthContextType>({
-  ...initialState,
-  login: async () => {
-    throw new Error('AuthContext not initialized');
-  },
-  register: async () => {
-    throw new Error('AuthContext not initialized');
-  },
-  signOut: async () => {
-    throw new Error('AuthContext not initialized');
-  },
-  resetPassword: async () => {
-    throw new Error('AuthContext not initialized');
-  }
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const handleAuthStateChange = async (session: any) => {
-    console.log('Handling auth state change:', session);
-    
-    if (!session?.user) {
-      console.log('No session or user, clearing state...');
-      dispatch({ type: 'CLEAR_USER' });
-      dispatch({ type: 'SET_LOADING', payload: false });
-      return;
-    }
-
+  const login = useCallback(async (credentials: LoginCredentials): Promise<void> => {
     try {
-      console.log('Fetching user profile...');
-      let { data: profile, error: profileError } = await supabase
+      console.log('🔵 Login başlatılıyor...', { email: credentials.email });
+      dispatch({ type: 'AUTH_START' });
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (authError) {
+        console.error('🔴 Auth hatası:', authError);
+        throw new AuthError(AuthErrorType.INVALID_CREDENTIALS);
+      }
+
+      if (!authData.user) {
+        console.error('🔴 Kullanıcı verisi bulunamadı');
+        throw new AuthError(AuthErrorType.USER_NOT_FOUND);
+      }
+
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
+        .eq('id', authData.user.id)
+        .single();
 
-      if (profileError) throw profileError;
-
-      if (!profile) {
-        console.log('Creating new profile...');
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert([
-            { 
-              id: session.user.id,
-              email: session.user.email,
-              username: session.user.user_metadata?.username || session.user.email?.split('@')[0],
-            }
-          ])
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        profile = newProfile;
+      if (profileError) {
+        console.error('🔴 Profil bilgileri alınamadı:', profileError);
+        throw new AuthError(AuthErrorType.USER_NOT_FOUND);
       }
 
-      const user: User = {
-        id: session.user.id,
-        email: session.user.email!,
-        username: profile.username,
-        avatar: profile.avatar_url,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at)
-      };
-
-      console.log('Setting user in context:', user);
-      dispatch({ type: 'SET_USER', payload: user });
-
-      // Admin route kontrolü
-      if (location.pathname.startsWith('/admin')) {
-        const { data: adminRole } = await supabase
-          .from('admin_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (!adminRole) {
-          console.log('Admin yetkisi yok, ana sayfaya yönlendiriliyor...');
-          await signOut();
-          return;
-        }
-      }
+      console.log('🟢 Giriş başarılı, state güncelleniyor...', { profile });
       
-      // Auth sayfalarındaysa dashboard'a yönlendir
-      if (['/login', '/register', '/auth/login', '/auth/register', '/'].includes(location.pathname)) {
-        console.log('Auth sayfasından dashboard\'a yönlendiriliyor...');
-        navigate('/dashboard', { replace: true });
-      }
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          username: profile.username,
+          avatar: profile.avatar_url,
+          createdAt: new Date(authData.user.created_at),
+          updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
+        },
+      });
 
     } catch (error) {
-      console.error('Error in handleAuthStateChange:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Kullanıcı bilgileri yüklenirken hata oluştu' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      console.log('Login attempt...', credentials.email);
-      const { data: { session }, error } = await supabase.auth.signInWithPassword(credentials);
-      
-      if (error) throw error;
-      if (!session) throw new Error('No session returned after login');
-
-      console.log('Login successful!');
-      return session;
-
-    } catch (error: any) {
-      console.error('Login error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      console.error('🔴 Login hatası:', error);
+      const errorMessage = error instanceof AuthError ? error.message : 'Giriş yapılırken bir hata oluştu.';
+      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, []);
 
-  const register = async (credentials: RegisterCredentials) => {
+  const register = useCallback(async (credentials: RegisterCredentials): Promise<void> => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      dispatch({ type: 'SET_ERROR', payload: null });
-
-      console.log('Registration attempt...', credentials.email);
-      const { data: { session }, error } = await supabase.auth.signUp({
+      dispatch({ type: 'AUTH_START' });
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
           data: {
-            username: credentials.username
-          }
+            username: credentials.username,
+          },
+        },
+      });
+
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          throw new AuthError(AuthErrorType.EMAIL_IN_USE);
         }
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new AuthError(AuthErrorType.SERVER_ERROR);
+      }
+
+      const { error: profileError } = await supabase.from('profiles').insert([
+        {
+          id: authData.user.id,
+          username: credentials.username,
+          email: credentials.email,
+          avatar_url: null,
+        },
+      ]);
+
+      if (profileError) {
+        if (profileError.message.includes('username')) {
+          throw new AuthError(AuthErrorType.USERNAME_IN_USE);
+        }
+        throw new AuthError(AuthErrorType.SERVER_ERROR);
+      }
+
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          username: credentials.username,
+          createdAt: new Date(authData.user.created_at),
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error('Register error:', error);
+      const errorMessage = error instanceof AuthError ? error.message : 'Kayıt olurken bir hata oluştu.';
+      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      throw error;
+    }
+  }, []);
+
+  const logout = useCallback(async (navigate?: (path: string) => void) => {
+    try {
+      console.log('🟡 Çıkış yapılıyor...');
+      dispatch({ type: 'AUTH_START' });
+
+      // Önce local state'i temizle
+      dispatch({ type: 'LOGOUT' });
+
+      // Local storage'ı temizle
+      localStorage.removeItem('sb-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+
+      // Sonra Supabase oturumunu sonlandır
+      const { error } = await supabase.auth.signOut({
+        scope: 'local' // Sadece local oturumu sonlandır
       });
       
-      if (error) throw error;
-      if (!session) throw new Error('No session returned after registration');
+      if (error) {
+        // Oturum zaten sonlanmışsa veya bulunamadıysa sessizce devam et
+        if (error.message.includes('session_not_found')) {
+          console.log('🟡 Oturum zaten sonlanmış veya bulunamadı');
+          return;
+        }
+        // Diğer hataları loglayalım ama kullanıcıya yansıtmayalım
+        console.error('🔴 Çıkış yaparken hata:', error);
+        return;
+        throw error;
+      }
 
-      console.log('Registration successful!');
-      return session;
-
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      console.log('Signing out...');
+      console.log('🟢 Oturum başarıyla sonlandırıldı');
       
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      dispatch({ type: 'CLEAR_USER' });
-      navigate('/', { replace: true });
-      console.log('Sign out successful!');
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+      // Anasayfaya yönlendir
+      if (navigate) {
+        navigate('/');
+      }
 
-  const resetPassword = async (email: string) => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
-      throw error;
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Hata durumunda da kullanıcıyı çıkış yapmış say
+      dispatch({ type: 'LOGOUT' });
+      // Local storage'ı temizlemeyi dene
+      try {
+        localStorage.removeItem('sb-auth-token');
+        localStorage.removeItem('supabase.auth.token');
+      } catch (e) {
+        console.error('🔴 Local storage temizlenirken hata:', e);
+      }
+      
+      // Hata durumunda da anasayfaya yönlendir
+      if (navigate) {
+        navigate('/');
+      }
     }
-  };
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      dispatch({ type: 'AUTH_START' });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      dispatch({ type: 'AUTH_SUCCESS', payload: null });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      dispatch({ type: 'AUTH_FAILURE', payload: 'Şifre sıfırlama bağlantısı gönderilirken bir hata oluştu.' });
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
-    console.log('Setting up auth state change listener...');
+    let mounted = true;
     
+    const checkAuth = async () => {
+      try {
+        dispatch({ type: 'AUTH_START' });
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (session?.user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Profile error:', profileError);
+            dispatch({ type: 'AUTH_FAILURE', payload: 'Profil bilgileri alınamadı.' });
+            return;
+          }
+
+          if (!mounted) return;
+
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: {
+              id: session.user.id,
+              email: session.user.email!,
+              username: profile.username,
+              avatar: profile.avatar_url,
+              createdAt: new Date(session.user.created_at),
+              updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
+            },
+          });
+        } else {
+          if (!mounted) return;
+          dispatch({ type: 'AUTH_START' });
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        if (!mounted) return;
+        dispatch({ type: 'AUTH_FAILURE', payload: 'Oturum kontrolü sırasında bir hata oluştu.' });
+      }
+    };
+
+    checkAuth();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        await handleAuthStateChange(session);
+      if (!mounted) return;
+
+      if (event === 'SIGNED_IN' && session) {
+        checkAuth();
       } else if (event === 'SIGNED_OUT') {
-        dispatch({ type: 'CLEAR_USER' });
-        dispatch({ type: 'SET_LOADING', payload: false });
-        navigate('/', { replace: true });
+        dispatch({ type: 'LOGOUT' });
       }
     });
 
-    // Initial session check
-    const checkInitialSession = async () => {
-      try {
-        console.log('Checking initial session...');
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          await handleAuthStateChange(session);
-        } else {
-          dispatch({ type: 'SET_LOADING', payload: false });
-        }
-      } catch (error) {
-        console.error('Initial session check error:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Oturum kontrolü sırasında hata oluştu' });
-        dispatch({ type: 'SET_LOADING', payload: false });
-      }
-    };
-
-    checkInitialSession();
-
     return () => {
-      subscription.unsubscribe();
+      mounted = false;
+      subscription?.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, signOut, resetPassword }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        login,
+        register,
+        logout,
+        resetPassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -246,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

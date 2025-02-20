@@ -45,12 +45,19 @@ export const settingsReducer = (
     case 'UPDATE_SUCCESS':
       return {
         ...state,
+        isLoading: false,
+        error: null,
         profile: state.profile ? {
           ...state.profile,
-          ...action.payload
-        } : null,
-        isLoading: false,
-        error: null
+          ...action.payload,
+          // Özel olarak notification_preferences'ı işle
+          notification_preferences: action.payload.notification_preferences 
+            ? {
+                ...state.profile.notification_preferences,
+                ...action.payload.notification_preferences
+              }
+            : state.profile.notification_preferences
+        } : null
       };
 
     case 'UPDATE_ERROR':

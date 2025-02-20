@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -13,99 +12,52 @@ export interface Database {
       profiles: {
         Row: {
           id: string
-          username: string
           email: string
-          avatar_url: string | null
+          full_name: string
+          role: 'student' | 'admin'
+          status: string
           created_at: string
-          updated_at: string
-          first_name: string | null
-          last_name: string | null
-          phone: string | null
-          notification_preferences: Json
-          theme_preferences: Json
-          privacy_settings: Json
+          last_sign_in_at: string | null
         }
         Insert: {
           id: string
-          username: string
           email: string
-          avatar_url?: string | null
+          full_name: string
+          role?: 'student' | 'admin'
+          status?: string
           created_at?: string
-          updated_at?: string
-          first_name?: string | null
-          last_name?: string | null
-          phone?: string | null
-          notification_preferences?: Json
-          theme_preferences?: Json
-          privacy_settings?: Json
+          last_sign_in_at?: string | null
         }
         Update: {
           id?: string
-          username?: string
           email?: string
-          avatar_url?: string | null
+          full_name?: string
+          role?: 'student' | 'admin'
+          status?: string
           created_at?: string
-          updated_at?: string
-          first_name?: string | null
-          last_name?: string | null
-          phone?: string | null
-          notification_preferences?: Json
-          theme_preferences?: Json
-          privacy_settings?: Json
+          last_sign_in_at?: string | null
         }
       }
-      admin_roles: {
+      quiz_results: {
         Row: {
           id: string
           user_id: string
-          role: 'super_admin' | 'admin' | 'moderator'
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          role: 'super_admin' | 'admin' | 'moderator'
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          role?: 'super_admin' | 'admin' | 'moderator'
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          type: 'system' | 'learning' | 'quiz'
-          title: string
-          message: string
-          is_read: boolean
-          link: string | null
+          score: number
+          completed: boolean
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          type: 'system' | 'learning' | 'quiz'
-          title: string
-          message: string
-          is_read?: boolean
-          link?: string | null
+          score: number
+          completed?: boolean
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          type?: 'system' | 'learning' | 'quiz'
-          title?: string
-          message?: string
-          is_read?: boolean
-          link?: string | null
+          score?: number
+          completed?: boolean
           created_at?: string
         }
       }
@@ -116,8 +68,6 @@ export interface Database {
           word: string
           learned: boolean
           last_reviewed: string
-          created_at: string
-          updated_at: string
         }
         Insert: {
           id?: string
@@ -125,8 +75,6 @@ export interface Database {
           word: string
           learned?: boolean
           last_reviewed?: string
-          created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
@@ -134,100 +82,25 @@ export interface Database {
           word?: string
           learned?: boolean
           last_reviewed?: string
-          created_at?: string
-          updated_at?: string
         }
       }
-      quiz_results: {
+      exercises: {
         Row: {
           id: string
           user_id: string
-          total_questions: number
-          correct_answers: number
-          wrong_answers: number
-          skipped_questions: number
-          time_spent: number
-          difficulty: string
+          completed: boolean
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          total_questions: number
-          correct_answers: number
-          wrong_answers: number
-          skipped_questions: number
-          time_spent: number
-          difficulty: string
+          completed?: boolean
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          total_questions?: number
-          correct_answers?: number
-          wrong_answers?: number
-          skipped_questions?: number
-          time_spent?: number
-          difficulty?: string
-          created_at?: string
-        }
-      }
-      editor_content: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          content: Json
-          status: string
-          created_at: string
-          updated_at: string
-          published_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          content?: Json
-          status?: string
-          created_at?: string
-          updated_at?: string
-          published_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          content?: Json
-          status?: string
-          created_at?: string
-          updated_at?: string
-          published_at?: string | null
-        }
-      }
-      editor_content_history: {
-        Row: {
-          id: string
-          content_id: string
-          content: Json
-          version: number
-          created_by: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          content_id: string
-          content: Json
-          version: number
-          created_by: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          content_id?: string
-          content?: Json
-          version?: number
-          created_by?: string
+          completed?: boolean
           created_at?: string
         }
       }
@@ -236,17 +109,10 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      is_admin: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      notification_type: 'system' | 'learning' | 'quiz'
-      notification_status: 'unread' | 'read'
-      admin_role: 'super_admin' | 'admin' | 'moderator'
+      [_ in never]: never
     }
   }
 }
