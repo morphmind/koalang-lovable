@@ -10,8 +10,11 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log("Function invoked:", req.method);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -19,6 +22,7 @@ serve(async (req) => {
   const upgradeHeader = headers.get("upgrade") || "";
 
   if (upgradeHeader.toLowerCase() !== "websocket") {
+    console.log("Non-WebSocket request received");
     return new Response("Expected WebSocket connection", { 
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -26,7 +30,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("WebSocket bağlantısı başlatılıyor...");
+    console.log("Initializing WebSocket connection");
     
     const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
@@ -35,14 +39,14 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
-    // OpenAI WebSocket bağlantısı
+    console.log("Creating OpenAI WebSocket connection");
     const openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01");
     let sessionStarted = false;
 
     openAISocket.onopen = () => {
-      console.log("OpenAI'ya bağlandı");
+      console.log("Connected to OpenAI");
       
-      // Yetkilendirme gönder
+      // OpenAI'ya yetkilendirme gönder
       openAISocket.send(JSON.stringify({
         type: "authorization",
         authorization: `Bearer ${OPENAI_API_KEY}`
@@ -53,15 +57,13 @@ serve(async (req) => {
     openAISocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("OpenAI'dan gelen mesaj:", data);
+        console.log("Received from OpenAI:", data.type);
 
-        // Session oluşturulduktan sonra yapılandırma gönder
         if (data.type === "session.created" && !sessionStarted) {
           sessionStarted = true;
-          console.log("Session oluşturuldu, yapılandırma gönderiliyor...");
+          console.log("Session created, sending config");
           
           const sessionConfig = {
-            event_id: "event_123",
             type: "session.update",
             session: {
               modalities: ["text", "audio"],
@@ -92,56 +94,63 @@ serve(async (req) => {
           clientSocket.send(event.data);
         }
       } catch (error) {
-        console.error("Mesaj işleme hatası:", error);
+        console.error("Error processing OpenAI message:", error);
       }
     };
 
-    // İstemciden gelen mesajları işle
+    // İstemciden gelen mesajları OpenAI'ya ilet
     clientSocket.onmessage = (event) => {
-      console.log("İstemciden gelen mesaj:", event.data);
-      if (openAISocket.readyState === WebSocket.OPEN) {
-        openAISocket.send(event.data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received from client:", data.type);
+        
+        if (openAISocket.readyState === WebSocket.OPEN) {
+          openAISocket.send(event.data);
+        }
+      } catch (error) {
+        console.error("Error processing client message:", error);
       }
     };
 
-    // Bağlantı hata yönetimi
+    // Hata yönetimi
     clientSocket.onerror = (error) => {
-      console.error("İstemci WebSocket hatası:", error);
+      console.error("Client WebSocket error:", error);
     };
 
     openAISocket.onerror = (error) => {
-      console.error("OpenAI WebSocket hatası:", error);
+      console.error("OpenAI WebSocket error:", error);
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(JSON.stringify({
           type: 'error',
-          message: 'OpenAI bağlantı hatası'
+          message: 'OpenAI connection error'
         }));
       }
     };
 
-    // Bağlantı kapatma yönetimi
+    // Bağlantı kapandığında temizlik
     clientSocket.onclose = () => {
-      console.log("İstemci bağlantısı kapandı");
+      console.log("Client disconnected");
       if (openAISocket.readyState === WebSocket.OPEN) {
         openAISocket.close();
       }
     };
 
     openAISocket.onclose = () => {
-      console.log("OpenAI bağlantısı kapandı");
+      console.log("OpenAI connection closed");
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.close();
       }
     };
 
-    // CORS başlıklarını ekleyerek yanıt döndür
-    return new Response(null, {
-      ...response,
-      headers: { ...response.headers, ...corsHeaders }
+    // CORS başlıkları eklenmiş yanıt döndür
+    response.headers = new Headers({
+      ...response.headers,
+      ...corsHeaders
     });
 
+    return response;
   } catch (error) {
-    console.error("Edge Function hatası:", error);
+    console.error("Critical error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

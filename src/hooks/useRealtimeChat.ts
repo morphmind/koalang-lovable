@@ -1,7 +1,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue, encodeAudioForAPI } from '../utils/audio';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase istemcisini doğrudan burada oluşturalım
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Supabase ortam değişkenleri eksik');
+}
 
 export const useRealtimeChat = () => {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
@@ -45,13 +53,15 @@ export const useRealtimeChat = () => {
       console.log('Connecting to WebSocket...');
       
       // WebSocket URL'ini doğru formatta oluştur
-      const wsUrl = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co/realtime-chat`;
+      const wsUrl = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/realtime-chat`;
+      console.log('Trying to connect to:', wsUrl);
+      
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
         console.log('WebSocket connected successfully');
         setIsConnected(true);
-        setConnectAttempts(0); // Başarılı bağlantıda deneme sayısını sıfırla
+        setConnectAttempts(0);
       };
 
       wsRef.current.onmessage = async (event) => {
@@ -84,10 +94,9 @@ export const useRealtimeChat = () => {
         console.log('WebSocket disconnected:', event);
         setIsConnected(false);
         
-        // Bağlantı beklenmedik şekilde kapandıysa yeniden bağlanmayı dene
         if (event.code !== 1000) {
           setConnectAttempts(prev => prev + 1);
-          setTimeout(() => connect(), 2000); // 2 saniye sonra tekrar dene
+          setTimeout(() => connect(), 2000);
         }
       };
 
