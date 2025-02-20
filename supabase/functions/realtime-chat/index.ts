@@ -11,6 +11,7 @@ serve(async (req) => {
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
 
+  // WebSocket bağlantısını kontrol et
   if (upgradeHeader.toLowerCase() !== "websocket") {
     return new Response("Expected WebSocket connection", { status: 400 });
   }
@@ -19,38 +20,27 @@ serve(async (req) => {
     const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
     
     // OpenAI WebSocket bağlantısı
-    const openAISocket = new WebSocket("wss://api.openai.com/v1/chat/completions");
-    
-    // Kullanıcının öğrendiği kelimeleri al
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
+    const openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01");
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
-    const { data: userProgress } = await supabaseClient
-      .from('user_progress')
-      .select('word')
-      .eq('learned', true);
-
-    const learnedWords = userProgress?.map(p => p.word) || [];
-
-    clientSocket.onopen = () => {
-      console.log("Client connected");
+    openAISocket.onopen = () => {
+      console.log("Connected to OpenAI");
       
-      // Başlangıç ayarlarını gönder
+      // Session başlat
       const sessionConfig = {
         event_id: "event_123",
         type: "session.update",
         session: {
           modalities: ["text", "audio"],
-          instructions: `Sen bir İngilizce öğretmenisin. Kullanıcının öğrendiği kelimeler: ${learnedWords.join(', ')}. 
-                       Bu kelimeleri kullanarak konuşma pratiği yap. Her cümlende en az bir öğrenilmiş kelime kullan.
-                       Cevapların kısa ve anlaşılır olsun.`,
+          instructions: `Sen bir İngilizce öğretmenisin. Her cevabında öğrencinin bildiği kelimelerden en az birini kullanmaya çalış.
+                       Öğrenci yeni öğrendiği kelimeleri pratik etmek istiyor. Onunla günlük konular hakkında sohbet et.
+                       Cevaplarını kısa ve anlaşılır tut. Öğrencinin hata yapması durumunda nazikçe düzelt.`,
           voice: "alloy",
           input_audio_format: "pcm16",
           output_audio_format: "pcm16",
           input_audio_transcription: {
-            model: "whisper-1"
+            model: "whisper-1",
+            word_timestamps: true
           },
           turn_detection: {
             type: "server_vad",
@@ -61,11 +51,17 @@ serve(async (req) => {
         }
       };
 
-      clientSocket.send(JSON.stringify(sessionConfig));
+      openAISocket.send(JSON.stringify({
+        type: "authorization",
+        authorization: `Bearer ${OPENAI_API_KEY}`
+      }));
+
+      openAISocket.send(JSON.stringify(sessionConfig));
     };
 
     // Kullanıcıdan gelen mesajları OpenAI'a ilet
     clientSocket.onmessage = (event) => {
+      console.log("Received from client:", event.data);
       if (openAISocket.readyState === WebSocket.OPEN) {
         openAISocket.send(event.data);
       }
@@ -73,6 +69,7 @@ serve(async (req) => {
 
     // OpenAI'dan gelen yanıtları kullanıcıya ilet
     openAISocket.onmessage = (event) => {
+      console.log("Received from OpenAI:", event.data);
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(event.data);
       }
@@ -91,6 +88,11 @@ serve(async (req) => {
     clientSocket.onclose = () => {
       console.log("Client disconnected");
       openAISocket.close();
+    };
+
+    openAISocket.onclose = () => {
+      console.log("OpenAI connection closed");
+      clientSocket.close();
     };
 
     return response;

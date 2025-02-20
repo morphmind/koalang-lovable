@@ -25,7 +25,7 @@ export const useRealtimeChat = () => {
   const connect = useCallback(async () => {
     try {
       wsRef.current = new WebSocket(
-        `wss://${process.env.SUPABASE_PROJECT_ID}.functions.supabase.co/realtime-chat`
+        `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co/realtime-chat`
       );
 
       wsRef.current.onopen = () => {
@@ -35,6 +35,7 @@ export const useRealtimeChat = () => {
 
       wsRef.current.onmessage = async (event) => {
         const data = JSON.parse(event.data);
+        console.log('Received message:', data);
         
         if (data.type === 'response.audio.delta') {
           setIsSpeaking(true);
