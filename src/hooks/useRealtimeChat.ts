@@ -43,7 +43,7 @@ export const useRealtimeChat = () => {
         return;
       }
 
-      const wsUrl = `wss://scrnefzlozfshqwbjvst.supabase.co/functions/v1/realtime-chat`;
+      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/functions/v1/realtime-chat`;
       console.log('Connecting to:', wsUrl);
       
       if (wsRef.current) {
@@ -61,9 +61,10 @@ export const useRealtimeChat = () => {
 
       wsRef.current.onmessage = async (event) => {
         try {
+          console.log('Raw message received:', event.data);
           const data = JSON.parse(event.data);
-          console.log('Received message:', data);
-          
+          console.log('Parsed message:', data);
+
           if (data.type === 'response.audio.delta') {
             setIsSpeaking(true);
             const audioData = new Uint8Array(
@@ -92,7 +93,6 @@ export const useRealtimeChat = () => {
         setIsConnected(false);
         wsRef.current = null;
         
-        // Only attempt reconnect if it wasn't a normal closure
         if (event.code !== 1000 && connectAttempts < MAX_CONNECT_ATTEMPTS) {
           console.log('Attempting to reconnect...');
           toast.loading('Yeniden bağlanılıyor...');

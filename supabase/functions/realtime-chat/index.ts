@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-  'Access-Control-Allow-Credentials': 'true'
 };
 
 serve(async (req) => {
@@ -36,7 +35,7 @@ serve(async (req) => {
     }
 
     // Create WebSocket connection to OpenAI
-    const openAISocket = new WebSocket("wss://api.openai.com/v1/audio-stream");
+    const openAISocket = new WebSocket("wss://api.openai.com/v1/audio/stream");
     
     // Handle connection to OpenAI
     openAISocket.onopen = () => {
@@ -53,7 +52,7 @@ serve(async (req) => {
         type: "session.config",
         config: {
           voice: "alloy",
-          model: "gpt-4o-mini",
+          model: "gpt-4",
           system_prompt: "You are Koaly, a friendly English teacher helping students practice English. Use simple words and speak clearly. Only use words from the user's learned words list when possible. Encourage them and help them improve their pronunciation.",
           input_audio_format: "pcm16",
           output_audio_format: "pcm16",
