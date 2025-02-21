@@ -1,15 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue, encodeAudioForAPI } from '../utils/audio';
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase istemcisini doğrudan burada oluşturalım
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase ortam değişkenleri eksik');
-}
 
 export const useRealtimeChat = () => {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
@@ -51,9 +42,7 @@ export const useRealtimeChat = () => {
       }
 
       console.log('Connecting to WebSocket...');
-      
-      // WebSocket URL'ini doğru formatta oluştur
-      const wsUrl = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/realtime-chat`;
+      const wsUrl = `wss://scrnefzlozfshqwbjvst.functions.supabase.co/realtime-chat`;
       console.log('Trying to connect to:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);

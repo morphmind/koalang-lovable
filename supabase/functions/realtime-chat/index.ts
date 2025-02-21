@@ -7,11 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
   'Access-Control-Allow-Credentials': 'true',
-}
+};
 
 serve(async (req) => {
-  console.log("Function invoked:", req.method);
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log("Handling CORS preflight request");
@@ -46,14 +44,12 @@ serve(async (req) => {
     openAISocket.onopen = () => {
       console.log("Connected to OpenAI");
       
-      // OpenAI'ya yetkilendirme gönder
       openAISocket.send(JSON.stringify({
         type: "authorization",
         authorization: `Bearer ${OPENAI_API_KEY}`
       }));
     };
 
-    // OpenAI mesaj işleme
     openAISocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -67,9 +63,7 @@ serve(async (req) => {
             type: "session.update",
             session: {
               modalities: ["text", "audio"],
-              instructions: `Sen bir İngilizce öğretmenisin. Her cevabında öğrencinin bildiği kelimelerden en az birini kullanmaya çalış.
-                           Öğrenci yeni öğrendiği kelimeleri pratik etmek istiyor. Onunla günlük konular hakkında sohbet et.
-                           Cevaplarını kısa ve anlaşılır tut. Öğrencinin hata yapması durumunda nazikçe düzelt.`,
+              instructions: "Sen İngilizce öğretmenisin. Öğrenci yeni öğrendiği kelimeleri pratik etmek istiyor. Her cevabında öğrencinin bildiği kelimelerden en az birini kullanmaya çalış. Cevaplarını kısa ve anlaşılır tut. Öğrencinin hata yapması durumunda nazikçe düzelt.",
               voice: "alloy",
               input_audio_format: "pcm16",
               output_audio_format: "pcm16",
@@ -89,7 +83,6 @@ serve(async (req) => {
           openAISocket.send(JSON.stringify(sessionConfig));
         }
 
-        // Yanıtı istemciye ilet
         if (clientSocket.readyState === WebSocket.OPEN) {
           clientSocket.send(event.data);
         }
@@ -98,7 +91,6 @@ serve(async (req) => {
       }
     };
 
-    // İstemciden gelen mesajları OpenAI'ya ilet
     clientSocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -112,7 +104,6 @@ serve(async (req) => {
       }
     };
 
-    // Hata yönetimi
     clientSocket.onerror = (error) => {
       console.error("Client WebSocket error:", error);
     };
@@ -127,7 +118,6 @@ serve(async (req) => {
       }
     };
 
-    // Bağlantı kapandığında temizlik
     clientSocket.onclose = () => {
       console.log("Client disconnected");
       if (openAISocket.readyState === WebSocket.OPEN) {
@@ -142,7 +132,6 @@ serve(async (req) => {
       }
     };
 
-    // CORS başlıkları eklenmiş yanıt döndür
     response.headers = new Headers({
       ...response.headers,
       ...corsHeaders
