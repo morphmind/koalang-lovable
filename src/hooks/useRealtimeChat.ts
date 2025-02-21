@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue, encodeAudioForAPI } from '../utils/audio';
+import { toast } from 'react-hot-toast';
 
 export const useRealtimeChat = () => {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
@@ -17,7 +18,6 @@ export const useRealtimeChat = () => {
 
   useEffect(() => {
     audioQueueRef.current = new AudioQueue();
-    
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
@@ -39,6 +39,7 @@ export const useRealtimeChat = () => {
 
       if (connectAttempts >= MAX_CONNECT_ATTEMPTS) {
         console.error('Max connection attempts reached');
+        toast.error('Bağlantı kurulamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
         return;
       }
 
@@ -55,6 +56,7 @@ export const useRealtimeChat = () => {
         console.log('WebSocket connected successfully');
         setIsConnected(true);
         setConnectAttempts(0);
+        toast.success('Bağlantı kuruldu!');
       };
 
       wsRef.current.onmessage = async (event) => {
@@ -77,9 +79,11 @@ export const useRealtimeChat = () => {
           }
           else if (data.type === 'error') {
             console.error('WebSocket error:', data.message);
+            toast.error('Bir hata oluştu: ' + data.message);
           }
         } catch (error) {
           console.error('Error processing message:', error);
+          toast.error('Mesaj işlenirken bir hata oluştu');
         }
       };
 
@@ -91,6 +95,7 @@ export const useRealtimeChat = () => {
         // Only attempt reconnect if it wasn't a normal closure
         if (event.code !== 1000 && connectAttempts < MAX_CONNECT_ATTEMPTS) {
           console.log('Attempting to reconnect...');
+          toast.loading('Yeniden bağlanılıyor...');
           setConnectAttempts(prev => prev + 1);
           setTimeout(() => connect(), RECONNECT_DELAY);
         }
@@ -99,10 +104,12 @@ export const useRealtimeChat = () => {
       wsRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setIsConnected(false);
+        toast.error('Bağlantı hatası oluştu');
       };
 
     } catch (error) {
       console.error('Connection error:', error);
+      toast.error('Bağlantı hatası: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
       setConnectAttempts(prev => prev + 1);
       if (connectAttempts < MAX_CONNECT_ATTEMPTS) {
         setTimeout(() => connect(), RECONNECT_DELAY);
@@ -127,8 +134,10 @@ export const useRealtimeChat = () => {
 
       await recorderRef.current.start();
       setIsRecording(true);
+      toast.success('Kayıt başladı');
     } catch (error) {
       console.error('Error starting recording:', error);
+      toast.error('Kayıt başlatılırken bir hata oluştu');
     }
   }, [connect]);
 
@@ -141,12 +150,14 @@ export const useRealtimeChat = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'response.create' }));
       }
+      toast.success('Kayıt durduruldu');
     }
   }, []);
 
   const sendMessage = useCallback((text: string) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.error('WebSocket not connected');
+      toast.error('Bağlantı yok');
       return;
     }
 
@@ -176,4 +187,3 @@ export const useRealtimeChat = () => {
     connect
   };
 };
-

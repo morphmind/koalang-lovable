@@ -5,12 +5,15 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+  'Access-Control-Allow-Credentials': 'true'
 };
 
 serve(async (req) => {
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
 
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,6 +38,7 @@ serve(async (req) => {
     // Create WebSocket connection to OpenAI
     const openAISocket = new WebSocket("wss://api.openai.com/v1/audio-stream");
     
+    // Handle connection to OpenAI
     openAISocket.onopen = () => {
       console.log("Connected to OpenAI");
       
@@ -50,8 +54,8 @@ serve(async (req) => {
         config: {
           voice: "alloy",
           model: "gpt-4o-mini",
-          system_prompt: "You are a helpful English teacher. The student is learning English and wants to practice their vocabulary. Try to use simple words and speak clearly. Use the words they've learned in your responses to help them practice.",
-          input_audio_format: "int16",
+          system_prompt: "You are Koaly, a friendly English teacher helping students practice English. Use simple words and speak clearly. Only use words from the user's learned words list when possible. Encourage them and help them improve their pronunciation.",
+          input_audio_format: "pcm16",
           output_audio_format: "pcm16",
           input_audio_settings: {
             sample_rate: 24000,
@@ -63,18 +67,12 @@ serve(async (req) => {
 
     // Forward messages between client and OpenAI
     openAISocket.onmessage = (event) => {
+      console.log("Received message from OpenAI:", event.data);
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(event.data);
       }
     };
 
-    clientSocket.onmessage = (event) => {
-      if (openAISocket.readyState === WebSocket.OPEN) {
-        openAISocket.send(event.data);
-      }
-    };
-
-    // Handle errors and disconnections
     openAISocket.onerror = (error) => {
       console.error("OpenAI WebSocket error:", error);
       if (clientSocket.readyState === WebSocket.OPEN) {
@@ -85,18 +83,31 @@ serve(async (req) => {
       }
     };
 
-    clientSocket.onerror = (error) => {
-      console.error("Client WebSocket error:", error);
+    // Handle messages from client
+    clientSocket.onmessage = (event) => {
+      console.log("Received message from client:", event.data);
+      if (openAISocket.readyState === WebSocket.OPEN) {
+        openAISocket.send(event.data);
+      }
     };
 
+    // Handle client disconnection
     clientSocket.onclose = () => {
       console.log("Client disconnected");
       openAISocket.close();
     };
 
+    // Handle OpenAI disconnection
     openAISocket.onclose = () => {
       console.log("OpenAI connection closed");
-      clientSocket.close();
+      if (clientSocket.readyState === WebSocket.OPEN) {
+        clientSocket.close();
+      }
+    };
+
+    // Handle client errors
+    clientSocket.onerror = (error) => {
+      console.error("Client WebSocket error:", error);
     };
 
     response.headers = new Headers({
@@ -113,4 +124,3 @@ serve(async (req) => {
     });
   }
 });
-
