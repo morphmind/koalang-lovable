@@ -9,6 +9,7 @@ export const useRealtimeChat = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [connectAttempts, setConnectAttempts] = useState(0);
   const MAX_CONNECT_ATTEMPTS = 3;
+  const RECONNECT_DELAY = 2000;
 
   const wsRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
@@ -41,10 +42,13 @@ export const useRealtimeChat = () => {
         return;
       }
 
-      console.log('Connecting to WebSocket...');
       const wsUrl = `wss://scrnefzlozfshqwbjvst.supabase.co/functions/v1/realtime-chat`;
-      console.log('Trying to connect to:', wsUrl);
+      console.log('Connecting to:', wsUrl);
       
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
@@ -82,10 +86,13 @@ export const useRealtimeChat = () => {
       wsRef.current.onclose = (event) => {
         console.log('WebSocket disconnected:', event);
         setIsConnected(false);
+        wsRef.current = null;
         
-        if (event.code !== 1000) {
+        // Only attempt reconnect if it wasn't a normal closure
+        if (event.code !== 1000 && connectAttempts < MAX_CONNECT_ATTEMPTS) {
+          console.log('Attempting to reconnect...');
           setConnectAttempts(prev => prev + 1);
-          setTimeout(() => connect(), 2000);
+          setTimeout(() => connect(), RECONNECT_DELAY);
         }
       };
 
@@ -97,6 +104,9 @@ export const useRealtimeChat = () => {
     } catch (error) {
       console.error('Connection error:', error);
       setConnectAttempts(prev => prev + 1);
+      if (connectAttempts < MAX_CONNECT_ATTEMPTS) {
+        setTimeout(() => connect(), RECONNECT_DELAY);
+      }
     }
   }, [connectAttempts]);
 
@@ -125,6 +135,7 @@ export const useRealtimeChat = () => {
   const stopRecording = useCallback(() => {
     if (recorderRef.current) {
       recorderRef.current.stop();
+      recorderRef.current = null;
       setIsRecording(false);
 
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -165,3 +176,4 @@ export const useRealtimeChat = () => {
     connect
   };
 };
+

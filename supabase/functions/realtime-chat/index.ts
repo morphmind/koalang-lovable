@@ -12,7 +12,7 @@ serve(async (req) => {
   const upgradeHeader = headers.get("upgrade") || "";
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   if (upgradeHeader.toLowerCase() !== "websocket") {
@@ -34,16 +34,17 @@ serve(async (req) => {
 
     // Create WebSocket connection to OpenAI
     const openAISocket = new WebSocket("wss://api.openai.com/v1/audio-stream");
-    let sessionStarted = false;
-
+    
     openAISocket.onopen = () => {
       console.log("Connected to OpenAI");
       
+      // Send authorization
       openAISocket.send(JSON.stringify({
         type: "authorization",
         authorization: `Bearer ${OPENAI_API_KEY}`
       }));
 
+      // Configure session
       openAISocket.send(JSON.stringify({
         type: "session.config",
         config: {
@@ -60,20 +61,20 @@ serve(async (req) => {
       }));
     };
 
+    // Forward messages between client and OpenAI
     openAISocket.onmessage = (event) => {
-      console.log("Received message from OpenAI:", event.data);
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(event.data);
       }
     };
 
     clientSocket.onmessage = (event) => {
-      console.log("Received message from client:", event.data);
       if (openAISocket.readyState === WebSocket.OPEN) {
         openAISocket.send(event.data);
       }
     };
 
+    // Handle errors and disconnections
     openAISocket.onerror = (error) => {
       console.error("OpenAI WebSocket error:", error);
       if (clientSocket.readyState === WebSocket.OPEN) {
@@ -90,16 +91,12 @@ serve(async (req) => {
 
     clientSocket.onclose = () => {
       console.log("Client disconnected");
-      if (openAISocket.readyState === WebSocket.OPEN) {
-        openAISocket.close();
-      }
+      openAISocket.close();
     };
 
     openAISocket.onclose = () => {
       console.log("OpenAI connection closed");
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.close();
-      }
+      clientSocket.close();
     };
 
     response.headers = new Headers({
