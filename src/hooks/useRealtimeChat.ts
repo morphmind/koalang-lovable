@@ -42,7 +42,7 @@ export const useRealtimeChat = () => {
       }
 
       console.log('Connecting to WebSocket...');
-      const wsUrl = `wss://scrnefzlozfshqwbjvst.functions.supabase.co/realtime-chat`;
+      const wsUrl = `wss://scrnefzlozfshqwbjvst.supabase.co/functions/v1/realtime-chat`;
       console.log('Trying to connect to:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);
