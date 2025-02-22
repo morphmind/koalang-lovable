@@ -17,6 +17,7 @@ export const VideoCallModal: React.FC = () => {
     isMuted,
     isVideoOn,
     endCall,
+    acceptCall,
     toggleMute,
     toggleVideo,
   } = useVideoCall();
@@ -94,20 +95,28 @@ export const VideoCallModal: React.FC = () => {
 
   // Aramayı kabul et
   const handleAcceptCall = async () => {
-    if (ringtoneRef.current) {
-      ringtoneRef.current.stop();
-      ringtoneRef.current = null;
-    }
-    if (acceptSoundRef.current) {
-      acceptSoundRef.current.play();
-    }
     try {
+      // Önce WebSocket bağlantısını kur
       await connect();
+      
+      // Ses efektlerini durdur ve kabul sesini çal
+      if (ringtoneRef.current) {
+        ringtoneRef.current.stop();
+        ringtoneRef.current = null;
+      }
+      if (acceptSoundRef.current) {
+        acceptSoundRef.current.play();
+      }
+
+      // Call state'i güncelle
+      acceptCall();
+
       toast({
         title: "Bağlantı başarılı",
         description: "Koaly ile konuşmaya başlayabilirsiniz",
       });
     } catch (error) {
+      console.error('Bağlantı hatası:', error);
       toast({
         title: "Bağlantı hatası",
         description: "Koaly ile bağlantı kurulamadı. Lütfen tekrar deneyin.",
@@ -258,7 +267,7 @@ export const VideoCallModal: React.FC = () => {
                             </button>
                           </div>
                         </div>
-                      ) : (
+                      ) : callState === 'connected' && (
                         <>
                           {/* Mesajlaşma alanı */}
                           <div className="bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 mb-4 h-48 overflow-y-auto">
