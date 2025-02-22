@@ -7,8 +7,10 @@ import { Howl } from 'howler';
 import { Battery, Wifi } from 'lucide-react';
 import { AnimatedKoaly } from './AnimatedKoaly';
 import { useRealtimeChat } from '../../../hooks/useRealtimeChat';
+import { useToast } from '@/components/ui/use-toast';
 
 export const VideoCallModal: React.FC = () => {
+  const { toast } = useToast();
   const {
     isOpen,
     callState,
@@ -99,7 +101,19 @@ export const VideoCallModal: React.FC = () => {
     if (acceptSoundRef.current) {
       acceptSoundRef.current.play();
     }
-    await connect();
+    try {
+      await connect();
+      toast({
+        title: "Bağlantı başarılı",
+        description: "Koaly ile konuşmaya başlayabilirsiniz",
+      });
+    } catch (error) {
+      toast({
+        title: "Bağlantı hatası",
+        description: "Koaly ile bağlantı kurulamadı. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Aramayı sonlandır
@@ -201,11 +215,11 @@ export const VideoCallModal: React.FC = () => {
                       </div>
 
                       {/* Avatar alanı */}
-                      <div className="flex-1 flex items-center justify-center mb-8">
+                      <div className={`flex-1 flex items-center justify-center mb-8 transition-all duration-300 ${callState === 'connected' ? 'translate-y-[-50px] scale-75' : ''}`}>
                         <div className="relative">
                           <div className="w-48 h-48 rounded-full overflow-hidden bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center">
                             <div className="w-40 h-40">
-                              <AnimatedKoaly isSpeaking={isSpeaking} />
+                              <AnimatedKoaly className={`w-full h-full transition-transform duration-300 ${isSpeaking ? 'scale-110' : 'scale-100'}`} />
                             </div>
                           </div>
                           {callState === 'connected' && (
