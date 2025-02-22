@@ -1,125 +1,168 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+interface UserContext {
+  knownWords: string[];
+  currentTopic: string;
+  lastMessageTimestamp: number;
+}
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-};
+const wsConnections = new Map<string, { socket: WebSocket; context: UserContext }>();
 
-serve(async (req) => {
-  const { headers } = req;
-  const upgradeHeader = headers.get("upgrade") || "";
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  if (upgradeHeader.toLowerCase() !== "websocket") {
-    return new Response("Expected WebSocket connection", { 
-      status: 400,
-      headers: corsHeaders 
+// Yapay zeka yanıtı oluştur
+async function generateAIResponse(message: string, context: UserContext): Promise<string> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `Sen Türkçe öğretmenisin. Kullanıcının bildiği kelimeler: ${context.knownWords.join(', ')}. 
+            Sadece bu kelimeleri kullanarak doğal bir sohbet yapmalısın. 
+            Cevapların kısa ve anlaşılır olmalı. Bilinmeyen kelime kullanma.`
+          },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 150
+      })
     });
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('AI yanıtı alınamadı:', error);
+    return 'Üzgünüm, şu anda yanıt veremiyorum.';
   }
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin') || '*';
 
   try {
-    console.log("Initializing WebSocket connection");
-    
-    const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set');
+    // OPTIONS isteğini işle
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+          'Access-Control-Max-Age': '86400',
+          'Vary': 'Origin',
+        },
+      });
     }
 
-    // Create WebSocket connection to OpenAI
-    const openAISocket = new WebSocket("wss://api.openai.com/v1/audio/stream");
-    
-    // Handle connection to OpenAI
-    openAISocket.onopen = () => {
-      console.log("Connected to OpenAI");
-      
-      // Send authorization
-      openAISocket.send(JSON.stringify({
-        type: "authorization",
-        authorization: `Bearer ${OPENAI_API_KEY}`
-      }));
+    // WebSocket yükseltme isteğini kontrol et
+    const upgrade = req.headers.get('upgrade');
+    if (!upgrade || upgrade.toLowerCase() !== 'websocket') {
+      return new Response('WebSocket bağlantısı gerekli', { status: 426 });
+    }
 
-      // Configure session
-      openAISocket.send(JSON.stringify({
-        type: "session.config",
-        config: {
-          voice: "alloy",
-          model: "gpt-4",
-          system_prompt: "You are Koaly, a friendly English teacher helping students practice English. Use simple words and speak clearly. Only use words from the user's learned words list when possible. Encourage them and help them improve their pronunciation.",
-          input_audio_format: "pcm16",
-          output_audio_format: "pcm16",
-          input_audio_settings: {
-            sample_rate: 24000,
-            channels: 1
-          }
-        }
-      }));
-    };
+    // WebSocket bağlantısını yükselt
+    const { socket, response } = Deno.upgradeWebSocket(req);
+    const clientId = crypto.randomUUID();
+    wsConnections.set(clientId, {
+      socket,
+      context: {
+        knownWords: [],
+        currentTopic: '',
+        lastMessageTimestamp: Date.now()
+      }
+    });
 
-    // Forward messages between client and OpenAI
-    openAISocket.onmessage = (event) => {
-      console.log("Received message from OpenAI:", event.data);
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(event.data);
+    // Bağlantı açıldığında
+    socket.onopen = () => {
+      console.log(`Bağlantı açıldı: ${clientId}`);
+      try {
+        socket.send(JSON.stringify({
+          type: 'connection.established',
+          clientId,
+          message: 'Bağlantı başarıyla kuruldu',
+        }));
+      } catch (err) {
+        console.error(`Bağlantı mesajı gönderme hatası: ${clientId}`, err);
       }
     };
 
-    openAISocket.onerror = (error) => {
-      console.error("OpenAI WebSocket error:", error);
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(JSON.stringify({
+    // Mesaj alındığında
+    socket.onmessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log(`Mesaj alındı (${clientId}):`, data);
+
+        if (data.type === 'init.user.context') {
+          // Kullanıcı bağlamını güncelle
+          const context = wsConnections.get(clientId);
+          if (context) {
+            context.context = {
+              knownWords: data.knownWords || [],
+              currentTopic: data.currentTopic || '',
+              lastMessageTimestamp: Date.now()
+            };
+          }
+          return;
+        }
+
+        if (data.type === 'conversation.item.create' && data.item?.content?.[0]?.text) {
+          const userMessage = data.item.content[0].text;
+          console.log(`Kullanıcı mesajı (${clientId}):`, userMessage);
+
+          const context = wsConnections.get(clientId);
+          if (!context) return;
+
+          // AI yanıtı al
+          const aiResponse = await generateAIResponse(userMessage, context.context);
+          
+          // Yanıtı gönder
+          socket.send(JSON.stringify({
+            type: 'response.audio_transcript.delta',
+            delta: aiResponse,
+          }));
+
+          // Text-to-Speech için yanıtı gönder
+          socket.send(JSON.stringify({
+            type: 'response.audio.generate',
+            text: aiResponse
+          }));
+        }
+      } catch (err) {
+        console.error(`Mesaj işleme hatası (${clientId}):`, err);
+        socket.send(JSON.stringify({
           type: 'error',
-          message: 'OpenAI connection error'
+          message: 'Mesaj işlenemedi',
         }));
       }
     };
 
-    // Handle messages from client
-    clientSocket.onmessage = (event) => {
-      console.log("Received message from client:", event.data);
-      if (openAISocket.readyState === WebSocket.OPEN) {
-        openAISocket.send(event.data);
-      }
+    // Hata durumunda
+    socket.onerror = (event) => {
+      console.error(`WebSocket hatası (${clientId}):`, event);
     };
 
-    // Handle client disconnection
-    clientSocket.onclose = () => {
-      console.log("Client disconnected");
-      openAISocket.close();
+    // Bağlantı kapandığında
+    socket.onclose = () => {
+      console.log(`Bağlantı kapandı: ${clientId}`);
+      wsConnections.delete(clientId);
     };
 
-    // Handle OpenAI disconnection
-    openAISocket.onclose = () => {
-      console.log("OpenAI connection closed");
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.close();
-      }
-    };
-
-    // Handle client errors
-    clientSocket.onerror = (error) => {
-      console.error("Client WebSocket error:", error);
-    };
-
-    response.headers = new Headers({
-      ...corsHeaders,
-      ...response.headers,
-    });
-
+    // WebSocket yanıtını döndür
     return response;
-  } catch (error) {
-    console.error("Critical error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+
+  } catch (err) {
+    console.error('Sunucu hatası:', err);
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+serve(handler);
+
