@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue } from '../utils/audio';
 import { useToast } from '@/components/ui/use-toast';
@@ -62,10 +63,10 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
+      await new Promise(resolve => setTimeout(resolve, 1000));
       this.updateSessionSettings();
-      setTimeout(() => {
-        this.sendInitialMessage();
-      }, 1000);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      this.sendInitialMessage();
     } catch (error) {
       console.error("Error initializing chat:", error);
       throw error;
@@ -132,6 +133,10 @@ export class RealtimeChat {
 
   stopRecording() {
     this.recorder?.stop();
+    if (this.dc?.readyState === 'open') {
+      console.log("Sending response.create after stopping recording");
+      this.dc.send(JSON.stringify({ type: 'response.create' }));
+    }
   }
 
   async sendMessage(text: string) {
@@ -204,7 +209,6 @@ export const useRealtimeChat = () => {
   const [isSpeakingSlow, setIsSpeakingSlow] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
-  const lastMessageRef = useRef<{ text: string; isUser: boolean } | null>(null);
 
   useEffect(() => {
     audioQueueRef.current = new AudioQueue();
@@ -224,16 +228,16 @@ export const useRealtimeChat = () => {
       audioQueueRef.current?.addToQueue(audioData);
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
-      lastMessageRef.current = null;
     } else if (event.type === 'response.audio_transcript.delta') {
       setMessages(prev => {
-        if (!lastMessageRef.current || lastMessageRef.current.isUser) {
-          const newMessage = { text: event.delta, isUser: false };
-          lastMessageRef.current = newMessage;
-          return [...prev, newMessage];
-        } else {
-          return prev;
-        }
+        const newMessage = { text: event.delta, isUser: false };
+        return [...prev, newMessage];
+      });
+    } else if (event.type === 'input_text_transcribed') {
+      // Kullanıcının konuşmasının transkripti geldiğinde
+      setMessages(prev => {
+        const newMessage = { text: event.text, isUser: true };
+        return [...prev, newMessage];
       });
     }
   }, []);
@@ -293,9 +297,6 @@ export const useRealtimeChat = () => {
   const stopRecording = useCallback(() => {
     chatRef.current?.stopRecording();
     setIsRecording(false);
-    if (chatRef.current?.dc?.readyState === 'open') {
-      chatRef.current.dc.send(JSON.stringify({ type: 'response.create' }));
-    }
   }, []);
 
   const sendMessage = useCallback((text: string) => {
@@ -323,11 +324,13 @@ export const useRealtimeChat = () => {
   const toggleSpeakingSpeed = useCallback(() => {
     setIsSpeakingSlow(prev => {
       const newValue = !prev;
-      chatRef.current?.setSpeakingSpeed(newValue);
-      toast({
-        title: newValue ? "Yavaş konuşma modu açık" : "Normal konuşma modu açık",
-        description: newValue ? "Koaly daha yavaş konuşacak" : "Koaly normal hızda konuşacak",
-      });
+      if (chatRef.current) {
+        chatRef.current.setSpeakingSpeed(newValue);
+        toast({
+          title: newValue ? "Yavaş konuşma modu açık" : "Normal konuşma modu açık",
+          description: newValue ? "Koaly daha yavaş konuşacak" : "Koaly normal hızda konuşacak",
+        });
+      }
       return newValue;
     });
   }, [toast]);
