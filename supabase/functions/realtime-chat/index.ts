@@ -1,168 +1,159 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-interface UserContext {
-  knownWords: string[];
-  currentTopic: string;
-  lastMessageTimestamp: number;
-}
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-const wsConnections = new Map<string, { socket: WebSocket; context: UserContext }>();
-
-// Yapay zeka yanıtı oluştur
-async function generateAIResponse(message: string, context: UserContext): Promise<string> {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: `Sen Türkçe öğretmenisin. Kullanıcının bildiği kelimeler: ${context.knownWords.join(', ')}. 
-            Sadece bu kelimeleri kullanarak doğal bir sohbet yapmalısın. 
-            Cevapların kısa ve anlaşılır olmalı. Bilinmeyen kelime kullanma.`
-          },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 150
-      })
-    });
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error('AI yanıtı alınamadı:', error);
-    return 'Üzgünüm, şu anda yanıt veremiyorum.';
-  }
-}
-
-const handler = async (req: Request): Promise<Response> => {
-  const origin = req.headers.get('origin') || '*';
-
-  try {
-    // OPTIONS isteğini işle
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-          'Access-Control-Max-Age': '86400',
-          'Vary': 'Origin',
-        },
-      });
-    }
-
-    // WebSocket yükseltme isteğini kontrol et
-    const upgrade = req.headers.get('upgrade');
-    if (!upgrade || upgrade.toLowerCase() !== 'websocket') {
-      return new Response('WebSocket bağlantısı gerekli', { status: 426 });
-    }
-
-    // WebSocket bağlantısını yükselt
-    const { socket, response } = Deno.upgradeWebSocket(req);
-    const clientId = crypto.randomUUID();
-    wsConnections.set(clientId, {
-      socket,
-      context: {
-        knownWords: [],
-        currentTopic: '',
-        lastMessageTimestamp: Date.now()
-      }
-    });
-
-    // Bağlantı açıldığında
-    socket.onopen = () => {
-      console.log(`Bağlantı açıldı: ${clientId}`);
-      try {
-        socket.send(JSON.stringify({
-          type: 'connection.established',
-          clientId,
-          message: 'Bağlantı başarıyla kuruldu',
-        }));
-      } catch (err) {
-        console.error(`Bağlantı mesajı gönderme hatası: ${clientId}`, err);
-      }
-    };
-
-    // Mesaj alındığında
-    socket.onmessage = async (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log(`Mesaj alındı (${clientId}):`, data);
-
-        if (data.type === 'init.user.context') {
-          // Kullanıcı bağlamını güncelle
-          const context = wsConnections.get(clientId);
-          if (context) {
-            context.context = {
-              knownWords: data.knownWords || [],
-              currentTopic: data.currentTopic || '',
-              lastMessageTimestamp: Date.now()
-            };
-          }
-          return;
-        }
-
-        if (data.type === 'conversation.item.create' && data.item?.content?.[0]?.text) {
-          const userMessage = data.item.content[0].text;
-          console.log(`Kullanıcı mesajı (${clientId}):`, userMessage);
-
-          const context = wsConnections.get(clientId);
-          if (!context) return;
-
-          // AI yanıtı al
-          const aiResponse = await generateAIResponse(userMessage, context.context);
-          
-          // Yanıtı gönder
-          socket.send(JSON.stringify({
-            type: 'response.audio_transcript.delta',
-            delta: aiResponse,
-          }));
-
-          // Text-to-Speech için yanıtı gönder
-          socket.send(JSON.stringify({
-            type: 'response.audio.generate',
-            text: aiResponse
-          }));
-        }
-      } catch (err) {
-        console.error(`Mesaj işleme hatası (${clientId}):`, err);
-        socket.send(JSON.stringify({
-          type: 'error',
-          message: 'Mesaj işlenemedi',
-        }));
-      }
-    };
-
-    // Hata durumunda
-    socket.onerror = (event) => {
-      console.error(`WebSocket hatası (${clientId}):`, event);
-    };
-
-    // Bağlantı kapandığında
-    socket.onclose = () => {
-      console.log(`Bağlantı kapandı: ${clientId}`);
-      wsConnections.delete(clientId);
-    };
-
-    // WebSocket yanıtını döndür
-    return response;
-
-  } catch (err) {
-    console.error('Sunucu hatası:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(handler);
+serve(async (req) => {
+  // CORS için OPTIONS request'i
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
+  // WebSocket upgrade header'ı kontrolü
+  const upgradeHeader = req.headers.get('upgrade') || '';
+  if (upgradeHeader.toLowerCase() !== 'websocket') {
+    return new Response('WebSocket bağlantısı gerekli', { status: 400 });
+  }
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  // WebSocket bağlantısını kur
+  const { socket, response } = Deno.upgradeWebSocket(req);
+
+  // OpenAI WebSocket bağlantısı
+  const openAISocket = new WebSocket(
+    'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01'
+  );
+
+  // OpenAI bağlantısı açıldığında
+  openAISocket.onopen = async () => {
+    try {
+      // Authorization header'dan user id'yi al
+      const authHeader = req.headers.get('Authorization');
+      const token = authHeader?.split(' ')[1];
+      
+      if (!token) {
+        socket.close(4000, 'Authentication required');
+        return;
+      }
+
+      // Kullanıcı bilgilerini al
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !user) {
+        console.error('User yüklenirken hata:', userError);
+        socket.close(4001, 'Invalid user');
+        return;
+      }
+
+      // Kullanıcının öğrendiği kelimeleri al
+      const { data: learnedWords, error: wordsError } = await supabase
+        .from('user_progress')
+        .select('word')
+        .eq('user_id', user.id)
+        .eq('learned', true);
+
+      if (wordsError) {
+        console.error('Kelimeler yüklenirken hata:', wordsError);
+        socket.close(4002, 'Failed to load words');
+        return;
+      }
+
+      // Kullanıcı profili bilgilerini al
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profil yüklenirken hata:', profileError);
+        socket.close(4003, 'Failed to load profile');
+        return;
+      }
+
+      const userName = profile.first_name || 'öğrenci';
+      const words = learnedWords.map(w => w.word);
+      console.log('Öğrenilen kelimeler:', words);
+
+      // Session ayarlarını gönder
+      openAISocket.send(JSON.stringify({
+        type: "session.update",
+        session: {
+          modalities: ["text", "audio"],
+          instructions: `Sen İngilizce öğrenmeme yardımcı olan Koaly'sin. Konuşmaya başladığımızda önce bana "${userName}" diyerek selam ver ve hal hatır sor. Daha sonra bir İngilizce pratik yapmayı öner. Benim öğrenmiş olduğum kelimeler: ${words.join(', ')}. 
+          
+          Bu kelimeleri kullanarak pratik yapalım. Kelimelerle ilgili örnek cümleler kur ve benim tekrar etmemi iste. Telaffuzumla ilgili geri bildirim ver. Aynı zamanda yeni cümleler kurmamı iste ve benim cümlelerimi düzelt. İngilizce konuş ama gerektiğinde Türkçe açıklamalar da yap.`,
+          voice: "alloy",
+          input_audio_format: "pcm16",
+          output_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            suppress_tokens: []
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 1000
+          },
+          tool_choice: "auto",
+          temperature: 0.8,
+          max_response_output_tokens: "inf"
+        }   
+      }));
+
+      console.log('Session ayarları gönderildi');
+    } catch (error) {
+      console.error('Başlangıç hatası:', error);
+      socket.close(4004, 'Initialization failed');
+      return;
+    }
+  };
+
+  // Client'dan gelen mesajları OpenAI'a ilet
+  socket.onmessage = (event) => {
+    if (openAISocket.readyState === WebSocket.OPEN) {
+      openAISocket.send(event.data);
+    }
+  };
+
+  // OpenAI'dan gelen mesajları client'a ilet
+  openAISocket.onmessage = (event) => {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(event.data);
+    }
+  };
+
+  // Hata yönetimi
+  socket.onerror = (error) => {
+    console.error('WebSocket hatası:', error);
+  };
+
+  openAISocket.onerror = (error) => {
+    console.error('OpenAI WebSocket hatası:', error);
+  };
+
+  // Bağlantı kapandığında temizlik
+  socket.onclose = () => {
+    if (openAISocket.readyState === WebSocket.OPEN) {
+      openAISocket.close();
+    }
+  };
+
+  openAISocket.onclose = () => {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.close();
+    }
+  };
+
+  return response;
+});

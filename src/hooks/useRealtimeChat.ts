@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue, encodeAudioForAPI } from '../utils/audio';
 
@@ -27,9 +28,6 @@ export const useRealtimeChat = () => {
     };
   }, []);
 
-  const [pollingActive, setPollingActive] = useState(false);
-  const pollingTimeoutRef = useRef<NodeJS.Timeout>();
-
   const connect = useCallback(async () => {
     try {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -43,30 +41,24 @@ export const useRealtimeChat = () => {
       }
 
       console.log('WebSocket bağlantısı kuruluyor...');
+      
+      // Tam URL'yi kullan
       const wsUrl = new URL('/realtime-chat', 'wss://scrnefzlozfshqwbjvst.functions.supabase.co');
       
-      // Önceki bağlantıyı temizle
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
       }
 
-      // Yeni bağlantı oluştur
       const ws = new WebSocket(wsUrl.toString());
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
+      // WebSocket event handlers
       ws.onopen = () => {
         console.log('WebSocket bağlantısı başarılı');
         setIsConnected(true);
         setConnectAttempts(0);
-
-        // Kullanıcının bildiği kelimeleri gönder
-        ws.send(JSON.stringify({
-          type: 'init.user.context',
-          knownWords: ['merhaba', 'nasılsın', 'iyiyim', 'teşekkür', 'güle güle'],
-          currentTopic: 'tanışma'
-        }));
       };
 
       ws.onmessage = async (event) => {
@@ -89,13 +81,6 @@ export const useRealtimeChat = () => {
             setIsSpeaking(false);
           } else if (data.type === 'response.audio_transcript.delta') {
             setMessages(prev => [...prev, { text: data.delta, isUser: false }]);
-            // Text-to-Speech isteği gönder
-            if (data.delta) {
-              ws.send(JSON.stringify({
-                type: 'response.audio.generate',
-                text: data.delta
-              }));
-            }
           } else if (data.type === 'error') {
             console.error('WebSocket hatası:', data.message);
           }
@@ -128,16 +113,6 @@ export const useRealtimeChat = () => {
     }
   }, [connectAttempts]);
 
-  useEffect(() => {
-    return () => {
-      if (pollingTimeoutRef.current) {
-        clearTimeout(pollingTimeoutRef.current);
-      }
-      setPollingActive(false);
-      setIsConnected(false);
-    };
-  }, []);
-
   const startRecording = useCallback(async () => {
     try {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -154,7 +129,7 @@ export const useRealtimeChat = () => {
       await recorderRef.current.start();
       setIsRecording(true);
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('Kayıt başlatma hatası:', error);
     }
   }, [connect]);
 
