@@ -17,6 +17,7 @@ export const useRealtimeChat = () => {
   const recorderRef = useRef<AudioRecorder | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
   const connectionTimeoutRef = useRef<number | null>(null);
+  const hasInitialMessageBeenSent = useRef<boolean>(false);
 
   useEffect(() => {
     audioQueueRef.current = new AudioQueue();
@@ -37,6 +38,21 @@ export const useRealtimeChat = () => {
     if (connectionTimeoutRef.current) {
       window.clearTimeout(connectionTimeoutRef.current);
       connectionTimeoutRef.current = null;
+    }
+    hasInitialMessageBeenSent.current = false;
+  }, []);
+
+  const sendInitialMessage = useCallback(() => {
+    if (!hasInitialMessageBeenSent.current && wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('İlk mesaj gönderiliyor...');
+      wsRef.current.send(JSON.stringify({
+        type: "conversation.item.create",
+        item: {
+          content: [{ text: "Hello! Let's start our English practice session." }]
+        }
+      }));
+      wsRef.current.send(JSON.stringify({ type: "response.create" }));
+      hasInitialMessageBeenSent.current = true;
     }
   }, []);
 
@@ -71,10 +87,16 @@ export const useRealtimeChat = () => {
         console.log('WebSocket bağlantısı başarılı');
         setIsConnected(true);
         setConnectAttempts(0);
-        
-        // Wait for connection.established before sending session.update
-        connectionTimeoutRef.current = window.setTimeout(() => {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
+      };
+
+      ws.onmessage = async (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('Alınan mesaj:', data);
+
+          if (data.type === 'connection.established') {
+            console.log('Bağlantı kuruldu:', data.clientId);
+            // Bağlantı kurulduktan sonra session.update gönder
             ws.send(JSON.stringify({
               type: "session.update",
               session: {
@@ -104,25 +126,8 @@ export const useRealtimeChat = () => {
               }   
             }));
 
-            // İlk mesajı gönder
-            ws.send(JSON.stringify({
-              type: "conversation.item.create",
-              item: {
-                content: [{ text: "Hello! Let's start our English practice session." }]
-              }
-            }));
-            ws.send(JSON.stringify({ type: "response.create" }));
-          }
-        }, 1000);
-      };
-
-      ws.onmessage = async (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Alınan mesaj:', data);
-
-          if (data.type === 'connection.established') {
-            console.log('Bağlantı kuruldu:', data.clientId);
+            // session.update'den sonra kısa bir gecikmeyle ilk mesajı gönder
+            setTimeout(sendInitialMessage, 1000);
             return;
           }
 
@@ -175,7 +180,7 @@ export const useRealtimeChat = () => {
         variant: "destructive",
       });
     }
-  }, [connectAttempts, cleanupConnection, toast]);
+  }, [connectAttempts, cleanupConnection, toast, sendInitialMessage]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -222,13 +227,14 @@ export const useRealtimeChat = () => {
       });
       return;
     }
-    console.log('Mesaj gönderiliyor:', text);
+
     wsRef.current.send(JSON.stringify({
       type: 'conversation.item.create',
       item: {
         content: [{ text }]
       }
     }));
+    wsRef.current.send(JSON.stringify({ type: 'response.create' }));
     setMessages(prev => [...prev, { text, isUser: true }]);
   }, [toast]);
 
@@ -243,4 +249,3 @@ export const useRealtimeChat = () => {
     connect,
   };
 };
-
