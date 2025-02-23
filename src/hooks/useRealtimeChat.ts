@@ -10,6 +10,7 @@ export class RealtimeChat {
   private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
+  private speakingSlow: boolean = false;
 
   constructor(private onMessage: (message: any) => void) {
     this.audioEl = document.createElement("audio");
@@ -69,10 +70,36 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
+      // Update session settings after connection
+      this.updateSessionSettings();
+
     } catch (error) {
       console.error("Error initializing chat:", error);
       throw error;
     }
+  }
+
+  private updateSessionSettings() {
+    if (!this.dc || this.dc.readyState !== 'open') return;
+
+    const settings = {
+      type: 'session.update',
+      session: {
+        modalities: ["text", "audio"],
+        voice: "alloy",
+        output_audio_format: "pcm16",
+        input_audio_format: "pcm16",
+        speaking_rate: this.speakingSlow ? 0.7 : 1.0,
+        turn_detection: {
+          type: "server_vad",
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 1000
+        }
+      }
+    };
+
+    this.dc.send(JSON.stringify(settings));
   }
 
   setAudioDataHandler(handler: (data: Float32Array) => void) {
@@ -113,10 +140,39 @@ export class RealtimeChat {
     this.dc.send(JSON.stringify({type: 'response.create'}));
   }
 
+  setSpeakingSpeed(slow: boolean) {
+    this.speakingSlow = slow;
+    this.updateSessionSettings();
+  }
+
   disconnect() {
-    this.recorder?.stop();
-    this.dc?.close();
-    this.pc?.close();
+    console.log("Disconnecting chat...");
+    if (this.recorder) {
+      console.log("Stopping recorder...");
+      this.recorder.stop();
+      this.recorder = null;
+    }
+    
+    if (this.audioEl.srcObject) {
+      console.log("Stopping audio tracks...");
+      const tracks = (this.audioEl.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+      this.audioEl.srcObject = null;
+    }
+    
+    if (this.dc) {
+      console.log("Closing data channel...");
+      this.dc.close();
+      this.dc = null;
+    }
+    
+    if (this.pc) {
+      console.log("Closing peer connection...");
+      this.pc.close();
+      this.pc = null;
+    }
+
+    this.audioEl.remove();
   }
 }
 
@@ -126,6 +182,7 @@ export const useRealtimeChat = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeakingSlow, setIsSpeakingSlow] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
 
@@ -148,7 +205,21 @@ export const useRealtimeChat = () => {
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
     } else if (event.type === 'response.transcript.delta') {
-      setMessages(prev => [...prev, { text: event.delta, isUser: false }]);
+      setMessages(prev => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && !lastMessage.isUser) {
+          // Update the last message if it's from Koaly
+          const updatedMessages = [...prev];
+          updatedMessages[updatedMessages.length - 1] = {
+            ...lastMessage,
+            text: lastMessage.text + event.delta
+          };
+          return updatedMessages;
+        } else {
+          // Create a new message if the last message was from the user
+          return [...prev, { text: event.delta, isUser: false }];
+        }
+      });
     }
   }, []);
 
@@ -233,15 +304,29 @@ export const useRealtimeChat = () => {
     setMessages(prev => [...prev, { text, isUser: true }]);
   }, [toast]);
 
+  const toggleSpeakingSpeed = useCallback(() => {
+    setIsSpeakingSlow(prev => {
+      const newValue = !prev;
+      chatRef.current?.setSpeakingSpeed(newValue);
+      toast({
+        title: newValue ? "Yavaş konuşma modu açık" : "Normal konuşma modu açık",
+        description: newValue ? "Koaly daha yavaş konuşacak" : "Koaly normal hızda konuşacak",
+      });
+      return newValue;
+    });
+  }, [toast]);
+
   return {
     messages,
     isConnected,
     isRecording,
     isSpeaking,
+    isSpeakingSlow,
     startRecording,
     stopRecording,
     sendMessage,
     connect,
+    toggleSpeakingSpeed,
   };
 };
 

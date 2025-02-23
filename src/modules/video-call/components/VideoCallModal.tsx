@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -26,10 +25,12 @@ export const VideoCallModal: React.FC = () => {
     messages,
     isRecording,
     isSpeaking,
+    isSpeakingSlow,
     startRecording,
     stopRecording,
     sendMessage,
-    connect
+    connect,
+    toggleSpeakingSpeed
   } = useRealtimeChat();
 
   const [userInput, setUserInput] = useState('');
@@ -39,7 +40,6 @@ export const VideoCallModal: React.FC = () => {
   const declineSoundRef = useRef<Howl | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Otomatik scroll için
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -57,7 +57,6 @@ export const VideoCallModal: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Ses efektlerini önceden yükle
     acceptSoundRef.current = new Howl({
       src: ['/sounds/accept.mp3'],
       volume: 0.5
@@ -74,7 +73,6 @@ export const VideoCallModal: React.FC = () => {
     };
   }, []);
 
-  // Ses efektleri
   useEffect(() => {
     if (callState === 'incoming' && !ringtoneRef.current) {
       ringtoneRef.current = new Howl({
@@ -93,13 +91,10 @@ export const VideoCallModal: React.FC = () => {
     };
   }, [callState]);
 
-  // Aramayı kabul et
   const handleAcceptCall = async () => {
     try {
-      // Önce WebSocket bağlantısını kur
       await connect();
       
-      // Ses efektlerini durdur ve kabul sesini çal
       if (ringtoneRef.current) {
         ringtoneRef.current.stop();
         ringtoneRef.current = null;
@@ -108,10 +103,8 @@ export const VideoCallModal: React.FC = () => {
         acceptSoundRef.current.play();
       }
 
-      // Call state'i güncelle
       acceptCall();
 
-      // Otomatik olarak ses kaydını başlat
       setTimeout(() => {
         startRecording().catch(error => {
           console.error('Ses kaydı başlatılamadı:', error);
@@ -137,7 +130,6 @@ export const VideoCallModal: React.FC = () => {
     }
   };
 
-  // Aramayı sonlandır
   const handleEndCall = () => {
     if (ringtoneRef.current) {
       ringtoneRef.current.stop();
@@ -146,10 +138,10 @@ export const VideoCallModal: React.FC = () => {
     if (declineSoundRef.current) {
       declineSoundRef.current.play();
     }
+    stopRecording();
     endCall();
   };
 
-  // Mikrofon kontrolü
   const handleRecordingToggle = () => {
     if (isRecording) {
       stopRecording();
@@ -158,7 +150,6 @@ export const VideoCallModal: React.FC = () => {
     }
   };
 
-  // Mesaj gönderme
   const handleSendMessage = () => {
     if (!userInput.trim()) return;
     sendMessage(userInput);
@@ -203,7 +194,6 @@ export const VideoCallModal: React.FC = () => {
             >
               <div className="inline-block w-full max-w-[375px] overflow-hidden align-middle transition-all transform">
                 <div className="relative bg-black rounded-[50px] p-3 shadow-2xl border-[14px] border-black min-h-[812px] overflow-hidden">
-                  {/* Notch */}
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[160px] h-[34px] bg-black z-50">
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[80px] h-[24px] bg-black rounded-b-[24px] flex items-center justify-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-black border-2 border-gray-800"></div>
@@ -211,7 +201,6 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Durum çubuğu */}
                   <div className="relative bg-transparent text-white px-6 py-2 flex justify-between items-center z-40">
                     <div className="text-sm font-medium">{currentTime}</div>
                     <div className="flex items-center gap-2">
@@ -220,12 +209,10 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Ana içerik */}
                   <div className="bg-black h-full relative rounded-[38px] overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black rounded-[38px]"></div>
 
                     <div className="relative z-10 p-4 flex flex-col h-full pb-32">
-                      {/* Üst bilgi */}
                       <div className="text-center text-white mb-8">
                         <h2 className="text-2xl font-semibold mb-1">
                           {callState === 'incoming' ? 'Koaly' : 'Koaly ile Konuşma'}
@@ -235,7 +222,6 @@ export const VideoCallModal: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Avatar alanı */}
                       <div className={`flex-1 flex items-center justify-center mb-8 transition-all duration-300 ${callState === 'connected' ? 'translate-y-[-50px] scale-75' : ''}`}>
                         <div className="relative">
                           <div className="w-48 h-48 rounded-full overflow-hidden bg-gradient-to-b from-blue-500 to-blue-600 flex items-center justify-center">
@@ -257,7 +243,6 @@ export const VideoCallModal: React.FC = () => {
                             Koaly seninle pratik yapmak istiyor
                           </p>
                           
-                          {/* Arama kontrolleri */}
                           <div className="flex justify-center items-end gap-8">
                             <button
                               onClick={handleEndCall}
@@ -281,7 +266,6 @@ export const VideoCallModal: React.FC = () => {
                         </div>
                       ) : callState === 'connected' && (
                         <>
-                          {/* Mesajlaşma alanı */}
                           <div className="bg-gray-900/50 backdrop-blur-lg rounded-2xl p-4 mb-4 h-48 overflow-y-auto">
                             <div className="space-y-3">
                               {messages.map((msg, index) => (
@@ -306,7 +290,17 @@ export const VideoCallModal: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Mesaj gönderme */}
+                          <button
+                            onClick={toggleSpeakingSpeed}
+                            className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
+                              isSpeakingSlow
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            } text-white transition-colors`}
+                          >
+                            {isSpeakingSlow ? 'Normal Hızda Konuş' : 'Yavaş Konuş'}
+                          </button>
+
                           <div className="flex gap-3 mb-6">
                             <input
                               type="text"
@@ -324,7 +318,6 @@ export const VideoCallModal: React.FC = () => {
                             </button>
                           </div>
 
-                          {/* Arama kontrolleri */}
                           <CallControls
                             isMuted={isMuted}
                             isVideoOn={isVideoOn}
@@ -339,7 +332,6 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Home çubuğu */}
                   <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-[140px] h-[5px] bg-gray-600/30 rounded-full z-50"></div>
                 </div>
               </div>
