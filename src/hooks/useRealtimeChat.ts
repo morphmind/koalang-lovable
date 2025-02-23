@@ -79,7 +79,12 @@ export const useRealtimeChat = () => {
               type: "session.update",
               session: {
                 modalities: ["text", "audio"],
-                instructions: "Sen İngilizce öğrenmeme yardımcı olan Koaly'sin. Konuşmaya başladığımızda bana selamlar ver ve hal hatır sor. Daha sonra bir İngilizce pratik yapmayı öner. Konuşma sırasında basit cümleler kur ve benim tekrar etmemi iste. Telaffuzumla ilgili geri bildirim ver.",
+                instructions: `You are Koaly, an English tutor. When the conversation starts, greet the user warmly in English and ask how they are doing. Then suggest having an English practice session. Keep your sentences simple and ask the user to repeat after you. Give feedback on their pronunciation. Here's how you should structure the conversation:
+                1. Start with a warm greeting: "Hi there! I'm Koaly, your English practice buddy. How are you today?"
+                2. After they respond, suggest starting practice: "Would you like to practice English with me?"
+                3. Focus on simple everyday phrases and encourage repetition
+                4. Give positive feedback on their pronunciation
+                5. Keep the conversation in English only`,
                 voice: "alloy",
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
@@ -98,6 +103,15 @@ export const useRealtimeChat = () => {
                 max_response_output_tokens: "inf"
               }   
             }));
+
+            // İlk mesajı gönder
+            ws.send(JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                content: [{ text: "Hello! Let's start our English practice session." }]
+              }
+            }));
+            ws.send(JSON.stringify({ type: "response.create" }));
           }
         }, 1000);
       };
@@ -229,3 +243,4 @@ export const useRealtimeChat = () => {
     connect,
   };
 };
+
