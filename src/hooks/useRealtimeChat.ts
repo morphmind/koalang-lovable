@@ -70,8 +70,12 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
-      // Update session settings after connection
+      // Bağlantı kurulduktan sonra session ayarlarını güncelleyelim
+      // ve Koaly'nin kendini tanıtmasını sağlayalım
       this.updateSessionSettings();
+      setTimeout(() => {
+        this.sendInitialMessage();
+      }, 1000);
 
     } catch (error) {
       console.error("Error initializing chat:", error);
@@ -90,6 +94,7 @@ export class RealtimeChat {
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
         speaking_rate: this.speakingSlow ? 0.7 : 1.0,
+        instructions: "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın.",
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -100,6 +105,27 @@ export class RealtimeChat {
     };
 
     this.dc.send(JSON.stringify(settings));
+  }
+
+  private sendInitialMessage() {
+    if (!this.dc || this.dc.readyState !== 'open') return;
+    
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [
+          {
+            type: 'input_text',
+            text: "Hi! Could you introduce yourself and start our conversation?"
+          }
+        ]
+      }
+    };
+
+    this.dc.send(JSON.stringify(event));
+    this.dc.send(JSON.stringify({type: 'response.create'}));
   }
 
   setAudioDataHandler(handler: (data: Float32Array) => void) {
@@ -204,11 +230,10 @@ export const useRealtimeChat = () => {
       audioQueueRef.current?.addToQueue(audioData);
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
-    } else if (event.type === 'response.transcript.delta') {
+    } else if (event.type === 'response.audio_transcript.delta') {
       setMessages(prev => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage && !lastMessage.isUser) {
-          // Update the last message if it's from Koaly
           const updatedMessages = [...prev];
           updatedMessages[updatedMessages.length - 1] = {
             ...lastMessage,
@@ -216,7 +241,6 @@ export const useRealtimeChat = () => {
           };
           return updatedMessages;
         } else {
-          // Create a new message if the last message was from the user
           return [...prev, { text: event.delta, isUser: false }];
         }
       });
@@ -255,9 +279,10 @@ export const useRealtimeChat = () => {
 
       chatRef.current?.setAudioDataHandler((audioData) => {
         if (chatRef.current?.dc?.readyState === 'open') {
+          const encodedAudio = encodeAudioForAPI(audioData);
           chatRef.current.dc.send(JSON.stringify({
             type: 'input_audio_buffer.append',
-            audio: encodeAudioForAPI(audioData)
+            audio: encodedAudio
           }));
         }
       });
