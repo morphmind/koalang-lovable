@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue } from '../utils/audio';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,7 +18,6 @@ export class RealtimeChat {
 
   async init() {
     try {
-      // Get ephemeral token from our Edge Function
       const { data, error } = await supabase.functions.invoke("realtime-chat");
       
       if (error || !data.client_secret?.value) {
@@ -28,17 +26,13 @@ export class RealtimeChat {
 
       const EPHEMERAL_KEY = data.client_secret.value;
 
-      // Create peer connection
       this.pc = new RTCPeerConnection();
 
-      // Set up remote audio
       this.pc.ontrack = e => this.audioEl.srcObject = e.streams[0];
 
-      // Add local audio track
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.pc.addTrack(ms.getTracks()[0]);
 
-      // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
@@ -46,11 +40,9 @@ export class RealtimeChat {
         this.onMessage(event);
       });
 
-      // Create and set local description
       const offer = await this.pc.createOffer();
       await this.pc.setLocalDescription(offer);
 
-      // Connect to OpenAI's Realtime API
       const baseUrl = "https://api.openai.com/v1/realtime";
       const model = "gpt-4o-realtime-preview-2024-12-17";
       const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
@@ -70,13 +62,10 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
-      // Bağlantı kurulduktan sonra session ayarlarını güncelleyelim
-      // ve Koaly'nin kendini tanıtmasını sağlayalım
       this.updateSessionSettings();
       setTimeout(() => {
         this.sendInitialMessage();
       }, 1000);
-
     } catch (error) {
       console.error("Error initializing chat:", error);
       throw error;
@@ -86,6 +75,8 @@ export class RealtimeChat {
   private updateSessionSettings() {
     if (!this.dc || this.dc.readyState !== 'open') return;
 
+    console.log("Updating session settings, speaking slow:", this.speakingSlow);
+    
     const settings = {
       type: 'session.update',
       session: {
@@ -163,10 +154,12 @@ export class RealtimeChat {
     };
 
     this.dc.send(JSON.stringify(event));
+    await new Promise(resolve => setTimeout(resolve, 100));
     this.dc.send(JSON.stringify({type: 'response.create'}));
   }
 
   setSpeakingSpeed(slow: boolean) {
+    console.log("Setting speaking speed:", slow);
     this.speakingSlow = slow;
     this.updateSessionSettings();
   }
@@ -211,6 +204,7 @@ export const useRealtimeChat = () => {
   const [isSpeakingSlow, setIsSpeakingSlow] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
+  const lastMessageRef = useRef<{ text: string; isUser: boolean } | null>(null);
 
   useEffect(() => {
     audioQueueRef.current = new AudioQueue();
@@ -230,18 +224,15 @@ export const useRealtimeChat = () => {
       audioQueueRef.current?.addToQueue(audioData);
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
+      lastMessageRef.current = null;
     } else if (event.type === 'response.audio_transcript.delta') {
       setMessages(prev => {
-        const lastMessage = prev[prev.length - 1];
-        if (lastMessage && !lastMessage.isUser) {
-          const updatedMessages = [...prev];
-          updatedMessages[updatedMessages.length - 1] = {
-            ...lastMessage,
-            text: lastMessage.text + event.delta
-          };
-          return updatedMessages;
+        if (!lastMessageRef.current || lastMessageRef.current.isUser) {
+          const newMessage = { text: event.delta, isUser: false };
+          lastMessageRef.current = newMessage;
+          return [...prev, newMessage];
         } else {
-          return [...prev, { text: event.delta, isUser: false }];
+          return prev;
         }
       });
     }

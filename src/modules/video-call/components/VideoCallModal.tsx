@@ -280,7 +280,7 @@ export const VideoCallModal: React.FC = () => {
                                       msg.isUser
                                         ? 'bg-blue-600 text-white rounded-tr-none'
                                         : 'bg-gray-700 text-white rounded-tl-none'
-                                    }`}
+                                    } transition-all duration-200 hover:scale-[1.02]`}
                                   >
                                     {msg.text}
                                   </div>
@@ -292,11 +292,12 @@ export const VideoCallModal: React.FC = () => {
 
                           <button
                             onClick={toggleSpeakingSpeed}
-                            className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
+                            className={`mb-4 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
                               isSpeakingSlow
                                 ? 'bg-green-600 hover:bg-green-700'
                                 : 'bg-blue-600 hover:bg-blue-700'
-                            } text-white transition-colors`}
+                            } text-white`}
+                            disabled={isSpeaking}
                           >
                             {isSpeakingSlow ? 'Normal Hızda Konuş' : 'Yavaş Konuş'}
                           </button>
