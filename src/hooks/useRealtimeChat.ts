@@ -42,7 +42,6 @@ export const useRealtimeChat = () => {
 
       console.log('WebSocket bağlantısı kuruluyor...');
       
-      // Tam URL'yi kullan
       const wsUrl = new URL('/realtime-chat', 'wss://scrnefzlozfshqwbjvst.functions.supabase.co');
       
       if (wsRef.current) {
@@ -54,11 +53,35 @@ export const useRealtimeChat = () => {
       ws.binaryType = 'arraybuffer';
       wsRef.current = ws;
 
-      // WebSocket event handlers
       ws.onopen = () => {
         console.log('WebSocket bağlantısı başarılı');
         setIsConnected(true);
         setConnectAttempts(0);
+        
+        // Bağlantı kurulduktan sonra session.update olayını gönder
+        ws.send(JSON.stringify({
+          type: "session.update",
+          session: {
+            modalities: ["text", "audio"],
+            instructions: "Sen İngilizce öğrenmeme yardımcı olan Koaly'sin. Konuşmaya başladığımızda bana selamlar ver ve hal hatır sor. Daha sonra bir İngilizce pratik yapmayı öner. Konuşma sırasında basit cümleler kur ve benim tekrar etmemi iste. Telaffuzumla ilgili geri bildirim ver.",
+            voice: "alloy",
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1",
+              suppress_tokens: []
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 1000
+            },
+            tool_choice: "auto",
+            temperature: 0.8,
+            max_response_output_tokens: "inf"
+          }   
+        }));
       };
 
       ws.onmessage = async (event) => {

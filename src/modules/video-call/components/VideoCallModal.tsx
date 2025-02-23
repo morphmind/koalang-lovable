@@ -111,6 +111,18 @@ export const VideoCallModal: React.FC = () => {
       // Call state'i güncelle
       acceptCall();
 
+      // Otomatik olarak ses kaydını başlat
+      setTimeout(() => {
+        startRecording().catch(error => {
+          console.error('Ses kaydı başlatılamadı:', error);
+          toast({
+            title: "Mikrofon hatası",
+            description: "Ses kaydı başlatılamadı. Lütfen mikrofon izinlerini kontrol edin.",
+            variant: "destructive",
+          });
+        });
+      }, 1000);
+
       toast({
         title: "Bağlantı başarılı",
         description: "Koaly ile konuşmaya başlayabilirsiniz",
