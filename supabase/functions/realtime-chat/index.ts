@@ -20,140 +20,103 @@ serve(async (req) => {
     return new Response('WebSocket bağlantısı gerekli', { status: 400 });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+  try {
+    // Get authorization token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response('Authentication required', { status: 401 });
+    }
 
-  // WebSocket bağlantısını kur
-  const { socket, response } = Deno.upgradeWebSocket(req);
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return new Response('Invalid token format', { status: 401 });
+    }
 
-  // OpenAI WebSocket bağlantısı
-  const openAISocket = new WebSocket(
-    'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01'
-  );
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-  // OpenAI bağlantısı açıldığında
-  openAISocket.onopen = async () => {
-    try {
-      // Authorization header'dan user id'yi al
-      const authHeader = req.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
+    // Verify user
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response('Invalid user', { status: 401 });
+    }
+
+    // Get user's learned words
+    const { data: learnedWords, error: wordsError } = await supabase
+      .from('user_progress')
+      .select('word')
+      .eq('user_id', user.id)
+      .eq('learned', true);
+
+    if (wordsError) {
+      console.error('Error fetching learned words:', wordsError);
+      return new Response('Failed to load user data', { status: 500 });
+    }
+
+    // Get user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      return new Response('Failed to load profile', { status: 500 });
+    }
+
+    // Create WebSocket connection
+    const { socket, response } = Deno.upgradeWebSocket(req);
+    
+    // Connect to OpenAI
+    const openAISocket = new WebSocket('wss://api.openai.com/v1/realtime');
+    
+    // Handle OpenAI connection
+    openAISocket.onopen = () => {
+      console.log('Connected to OpenAI');
       
-      if (!token) {
-        socket.close(4000, 'Authentication required');
-        return;
-      }
-
-      // Kullanıcı bilgilerini al
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      // Send initial session update
+      const words = learnedWords?.map(w => w.word) || [];
+      const userName = profile?.first_name || 'öğrenci';
       
-      if (userError || !user) {
-        console.error('User yüklenirken hata:', userError);
-        socket.close(4001, 'Invalid user');
-        return;
-      }
-
-      // Kullanıcının öğrendiği kelimeleri al
-      const { data: learnedWords, error: wordsError } = await supabase
-        .from('user_progress')
-        .select('word')
-        .eq('user_id', user.id)
-        .eq('learned', true);
-
-      if (wordsError) {
-        console.error('Kelimeler yüklenirken hata:', wordsError);
-        socket.close(4002, 'Failed to load words');
-        return;
-      }
-
-      // Kullanıcı profili bilgilerini al
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Profil yüklenirken hata:', profileError);
-        socket.close(4003, 'Failed to load profile');
-        return;
-      }
-
-      const userName = profile.first_name || 'öğrenci';
-      const words = learnedWords.map(w => w.word);
-      console.log('Öğrenilen kelimeler:', words);
-
-      // Session ayarlarını gönder
-      openAISocket.send(JSON.stringify({
-        type: "session.update",
-        session: {
-          modalities: ["text", "audio"],
-          instructions: `Sen İngilizce öğrenmeme yardımcı olan Koaly'sin. Konuşmaya başladığımızda önce bana "${userName}" diyerek selam ver ve hal hatır sor. Daha sonra bir İngilizce pratik yapmayı öner. Benim öğrenmiş olduğum kelimeler: ${words.join(', ')}. 
-          
-          Bu kelimeleri kullanarak pratik yapalım. Kelimelerle ilgili örnek cümleler kur ve benim tekrar etmemi iste. Telaffuzumla ilgili geri bildirim ver. Aynı zamanda yeni cümleler kurmamı iste ve benim cümlelerimi düzelt. İngilizce konuş ama gerektiğinde Türkçe açıklamalar da yap.`,
-          voice: "alloy",
-          input_audio_format: "pcm16",
-          output_audio_format: "pcm16",
-          input_audio_transcription: {
-            model: "whisper-1",
-            suppress_tokens: []
-          },
-          turn_detection: {
-            type: "server_vad",
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 1000
-          },
-          tool_choice: "auto",
-          temperature: 0.8,
-          max_response_output_tokens: "inf"
-        }   
+      socket.send(JSON.stringify({
+        type: "connection.established",
+        clientId: crypto.randomUUID()
       }));
-
-      console.log('Session ayarları gönderildi');
-    } catch (error) {
-      console.error('Başlangıç hatası:', error);
-      socket.close(4004, 'Initialization failed');
-      return;
-    }
-  };
-
-  // Client'dan gelen mesajları OpenAI'a ilet
-  socket.onmessage = (event) => {
-    if (openAISocket.readyState === WebSocket.OPEN) {
-      openAISocket.send(event.data);
-    }
-  };
-
-  // OpenAI'dan gelen mesajları client'a ilet
-  openAISocket.onmessage = (event) => {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(event.data);
-    }
-  };
-
-  // Hata yönetimi
-  socket.onerror = (error) => {
-    console.error('WebSocket hatası:', error);
-  };
-
-  openAISocket.onerror = (error) => {
-    console.error('OpenAI WebSocket hatası:', error);
-  };
-
-  // Bağlantı kapandığında temizlik
-  socket.onclose = () => {
-    if (openAISocket.readyState === WebSocket.OPEN) {
+    };
+    
+    // Handle messages from client
+    socket.onmessage = (event) => {
+      if (openAISocket.readyState === WebSocket.OPEN) {
+        openAISocket.send(event.data);
+      }
+    };
+    
+    // Handle messages from OpenAI
+    openAISocket.onmessage = (event) => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(event.data);
+      }
+    };
+    
+    // Handle closures and errors
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    socket.onclose = () => {
       openAISocket.close();
-    }
-  };
-
-  openAISocket.onclose = () => {
-    if (socket.readyState === WebSocket.OPEN) {
+    };
+    
+    openAISocket.onclose = () => {
       socket.close();
-    }
-  };
+    };
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error('Server error:', error);
+    return new Response('Internal server error', { status: 500 });
+  }
 });
