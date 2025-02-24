@@ -15,7 +15,7 @@ export const DashboardSidebar: React.FC = () => {
   const { getLearnedWordsCount } = useWords();
   const { openAuthPopup } = useAuthPopup(); 
   const { startCall } = useVideoCall();
-  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleQuizClick = () => {
     if (!user) {
@@ -32,11 +32,6 @@ export const DashboardSidebar: React.FC = () => {
       return;
     }
     startCall();
-  };
-
-  const handleNavigate = (path: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate(path);
   };
 
   const badges = React.useMemo(() => {
@@ -99,8 +94,6 @@ export const DashboardSidebar: React.FC = () => {
   }, [user, getLearnedWordsCount, stats]);
 
   const earnedBadges = badges.filter(badge => badge.earned);
-
-  const location = useLocation();
 
   const menuItems = [
     {
@@ -217,9 +210,8 @@ export const DashboardSidebar: React.FC = () => {
               
               return (
                 <li key={item.href}>
-                  <a
-                    href={item.href}
-                    onClick={handleNavigate(item.href)}
+                  <Link
+                    to={item.href}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all relative group cursor-pointer
                               ${isActive 
                                 ? 'bg-gradient-to-r from-bs-primary to-bs-800 text-white shadow-lg shadow-bs-primary/20' 
@@ -244,7 +236,7 @@ export const DashboardSidebar: React.FC = () => {
                     <ChevronRight className={`w-5 h-5 transition-transform ${isActive 
                       ? 'text-white/80' 
                       : 'text-bs-navygri group-hover:text-bs-navy'} group-hover:translate-x-1`} />
-                  </a>
+                  </Link>
                 </li>
               );
             })}
@@ -293,6 +285,8 @@ export const DashboardSidebar: React.FC = () => {
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 
                        group-hover:opacity-50 transition duration-300 animate-pulse"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 blur opacity-20 
+                       group-hover:opacity-40 transition duration-300 animate-pulse delay-150"></div>
         </button>
       </div>
 
