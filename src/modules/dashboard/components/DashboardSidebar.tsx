@@ -1,18 +1,17 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool, Phone } from 'lucide-react';
+import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useWords } from '../../words/context/WordContext';
 import { useAuthPopup } from '../../auth/hooks/useAuthPopup';
-import { useVideoCall } from '../../video-call/context/VideoCallContext';
 
 export const DashboardSidebar: React.FC = () => {
   const { user } = useAuth();
   const { stats } = useDashboard();
   const { getLearnedWordsCount } = useWords();
   const { openAuthPopup } = useAuthPopup(); 
-  const { startCall } = useVideoCall();
 
   const handleQuizClick = () => {
     if (!user) {
@@ -228,18 +227,6 @@ export const DashboardSidebar: React.FC = () => {
             })}
           </ul>
         </nav>
-
-        {/* Video Arama Butonu */}
-        <button
-          onClick={startCall}
-          className="w-full flex items-center gap-3 p-3 text-gray-700 rounded-xl hover:bg-bs-50 transition-colors group relative overflow-hidden"
-        >
-          <div className="relative z-10 flex items-center w-full gap-3">
-            <Phone className="w-5 h-5 text-bs-primary" />
-            <span className="font-medium">Koaly ile Pratik</span>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-bs-50/50 to-bs-100/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-200" />
-        </button>
       </div>
 
       {/* Hızlı Aksiyonlar */}
