@@ -4,7 +4,7 @@ import { AudioRecorder } from '../utils/audio';
 
 export class RealtimeChat {
   private pc: RTCPeerConnection | null = null;
-  private dc: RTCDataChannel | null = null;
+  dc: RTCDataChannel | null = null;
   private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
@@ -134,8 +134,16 @@ export class RealtimeChat {
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
         instructions: this.speakingSlow 
-          ? `You are an English practice partner. Your name is Koaly. ${userContext} The user's nickname is ${this.userInfo.nickname || 'unknown'}. Start by greeting them by their nickname and asking how they would like to be addressed during the conversation. Always speak very slowly and clearly, emphasizing each word individually with clear pauses between them. Focus on using vocabulary from their learned words list when possible, and keep the conversation at their level. Never say "Well done" or similar praise unless they've actually accomplished something specific. Maintain natural conversation flow.`
-          : `You are an English practice partner. Your name is Koaly. ${userContext} Always be kind, patient and helpful. Focus on using vocabulary appropriate for their level. Maintain natural conversation flow.`,
+          ? `You are Koaly, a friendly English conversation partner. ${userContext} 
+             Treat this as a natural conversation between two friends. Always listen carefully to what the user says and respond appropriately to the context.
+             When they say "Hi" or "Hello", greet them warmly like a friend would. Never ask if they want to practice English right after a greeting - that's not natural.
+             Keep the conversation flowing naturally by asking relevant follow-up questions based on their responses.
+             Speak very slowly and clearly, with pauses between words. Use vocabulary from their learned words list when possible.
+             Remember previous context in the conversation and refer back to it naturally. Never break character or mention being an AI.`
+          : `You are Koaly, a friendly English conversation partner. ${userContext}
+             Treat this as a natural conversation between two friends. Always listen carefully to what the user says and respond appropriately to the context.
+             Keep the conversation flowing naturally by asking relevant follow-up questions based on their responses.
+             Remember previous context in the conversation and refer back to it naturally. Never break character or mention being an AI.`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -159,7 +167,7 @@ export class RealtimeChat {
         content: [
           {
             type: 'input_text',
-            text: `Hi Koaly!`
+            text: 'Start conversation'
           }
         ]
       }

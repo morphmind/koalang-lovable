@@ -29,6 +29,16 @@ export const useRealtimeChat = () => {
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
       currentMessageRef.current = null;
+    } else if (event.type === 'speech_started') {
+      // Kullanıcı konuşmaya başladığında geçici mesaj oluştur
+      setMessages(prev => [...prev, { text: '...', isUser: true }]);
+    } else if (event.type === 'speech_stopped') {
+      // Geçici mesajı kaldır
+      setMessages(prev => prev.filter(msg => msg.text !== '...'));
+    } else if (event.type === 'input_text_transcribed' && event.text) {
+      console.log('Setting user message:', event.text);
+      setMessages(prev => [...prev.filter(msg => msg.text !== '...'), { text: event.text, isUser: true }]);
+      currentMessageRef.current = { text: event.text, isUser: true };
     } else if (event.type === 'response.audio_transcript.delta' && event.delta) {
       setMessages(prev => {
         if (!currentMessageRef.current || currentMessageRef.current.isUser) {
@@ -43,13 +53,6 @@ export const useRealtimeChat = () => {
             text: lastMessage.text + event.delta 
           }];
         }
-      });
-    } else if (event.type === 'input_text_transcribed' && event.text) {
-      console.log('Setting user message:', event.text);
-      setMessages(prev => {
-        const newMessage = { text: event.text, isUser: true };
-        currentMessageRef.current = newMessage;
-        return [...prev, newMessage];
       });
     }
   }, []);
