@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -254,25 +253,22 @@ export const DashboardSidebar: React.FC = () => {
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-col">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg font-semibold text-white truncate">Koaly ile Konuş</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                      <HeadphonesIcon size={12} className="text-white/90" />
-                      <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                      <MessageSquare size={12} className="text-white/90" />
-                      <span className="text-xs text-white/90 whitespace-nowrap">Mesaj</span>
-                    </div>
+                <span className="text-lg font-semibold text-white mb-1">Koaly ile Konuş</span>
+                <p className="text-sm text-blue-100 mb-2">Hemen İngilizce pratik yap!</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                    <HeadphonesIcon size={12} className="text-white/90" />
+                    <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                    <MessageSquare size={12} className="text-white/90" />
+                    <span className="text-xs text-white/90 whitespace-nowrap">Mesaj</span>
                   </div>
                 </div>
-                <p className="text-sm text-blue-100 truncate">Hemen İngilizce pratik yap!</p>
               </div>
             </div>
           </div>
 
-          {/* Hover ve animasyon efektleri */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 
