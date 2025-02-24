@@ -24,6 +24,27 @@ export class RealtimeChat {
 
   async init() {
     try {
+      // Kullanıcı bilgilerini al
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('username, first_name')
+        .single();
+
+      // Öğrenilen kelimeleri al
+      const { data: userProgress } = await supabase
+        .from('user_progress')
+        .select('word')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('learned', true);
+
+      const learnedWords = userProgress?.map(p => p.word) || [];
+      
+      this.session.setUserInfo({
+        nickname: userData?.username || 'friend',
+        level: 'A1', // Bu değeri veritabanından alabilirsiniz
+        learnedWords: learnedWords
+      });
+
       const { data, error } = await supabase.functions.invoke("realtime-chat");
       
       if (error || !data.client_secret?.value) {
@@ -71,8 +92,7 @@ export class RealtimeChat {
 
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.session.updateSessionSettings();
-      await new Promise(resolve => setTimeout(resolve, 500));
-      this.session.sendInitialMessage();
+
     } catch (error) {
       console.error("Error initializing chat:", error);
       throw error;

@@ -68,43 +68,16 @@ export const useRealtimeChat = () => {
         return;
       }
 
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('username')
-        .single();
-
-      const { data: userProgress } = await supabase
-        .from('user_progress')
-        .select('word')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .eq('learned', true);
-
       chatRef.current = new RealtimeChat(handleMessage);
-      
-      chatRef.current.setUserInfo({
-        nickname: userData?.username || 'friend',
-        level: 'A1',
-        learnedWords: userProgress?.map(p => p.word) || []
-      });
-      
       await chatRef.current.init();
       setIsConnected(true);
       
-      toast({
-        title: "Bağlantı başarılı",
-        description: "Koaly ile konuşmaya başlayabilirsiniz",
-      });
-
       audioQueueRef.current = new AudioQueue();
     } catch (error) {
       console.error('Bağlantı hatası:', error);
-      toast({
-        title: "Bağlantı hatası",
-        description: error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu',
-        variant: "destructive",
-      });
+      throw error;
     }
-  }, [handleMessage, toast]);
+  }, [handleMessage]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -125,13 +98,9 @@ export const useRealtimeChat = () => {
       setIsRecording(true);
     } catch (error) {
       console.error('Kayıt başlatma hatası:', error);
-      toast({
-        title: "Kayıt hatası",
-        description: "Ses kaydı başlatılamadı",
-        variant: "destructive",
-      });
+      throw error;
     }
-  }, [connect, toast]);
+  }, [connect]);
 
   const stopRecording = useCallback(() => {
     chatRef.current?.stopRecording();
@@ -165,14 +134,10 @@ export const useRealtimeChat = () => {
       const newValue = !prev;
       if (chatRef.current) {
         chatRef.current.setSpeakingSpeed(newValue);
-        toast({
-          title: newValue ? "Yavaş konuşma modu açık" : "Normal konuşma modu açık",
-          description: newValue ? "Koaly daha yavaş konuşacak" : "Koaly normal hızda konuşacak",
-        });
       }
       return newValue;
     });
-  }, [toast]);
+  }, []);
 
   return {
     messages,
@@ -187,4 +152,3 @@ export const useRealtimeChat = () => {
     toggleSpeakingSpeed,
   };
 };
-
