@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -10,7 +11,6 @@ import { useToast } from '@/components/ui/use-toast';
 
 export const VideoCallModal: React.FC = () => {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const {
     callState,
@@ -161,7 +161,7 @@ export const VideoCallModal: React.FC = () => {
   };
 
   return (
-    <Transition appear show={isOpen} as={React.Fragment}>
+    <Transition appear show={callState !== 'idle'} as={React.Fragment}>
       <Dialog
         as="div"
         className="fixed inset-0 z-50 overflow-y-auto"
