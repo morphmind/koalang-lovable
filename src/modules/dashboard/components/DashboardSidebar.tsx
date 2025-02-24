@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -103,12 +102,6 @@ export const DashboardSidebar: React.FC = () => {
       label: 'Ana Sayfa',
       href: '/dashboard',
       description: 'Kelime öğrenmeye devam et'
-    },
-    {
-      icon: BookOpen,
-      label: 'Öğrendiğim Kelimeler',
-      href: '/dashboard/learned-words',
-      description: 'Öğrendiğin kelimeleri gör'
     },
     {
       icon: Activity,
