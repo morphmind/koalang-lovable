@@ -60,20 +60,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const location = useLocation();
   const isMainDashboard = location.pathname === '/dashboard';
 
-  const renderWordLevel = (percentage: number) => {
-    if (percentage >= 80) return 'Uzman';
-    if (percentage >= 60) return 'İleri Seviye';
-    if (percentage >= 40) return 'Orta Seviye';
-    if (percentage >= 20) return 'Başlangıç';
-    return 'Yeni Başlayan';
-  };
-
-  const calculateProgress = () => {
-    const totalWords = dashboardStats.totalWords;
-    const learnedWords = dashboardStats.learnedWords;
-    return Math.round((learnedWords / totalWords) * 100);
-  };
-
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-bs-100 p-6">
@@ -91,9 +77,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
     );
   }
-
-  const progressPercentage = calculateProgress();
-  const userLevel = renderWordLevel(progressPercentage);
 
   return (
     <div className="space-y-6">
@@ -136,33 +119,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Star className="w-5 h-5 text-yellow-400" />
-                      <span className="text-white font-medium">{userLevel}</span>
+                      <span className="text-white font-medium">İleri Seviye</span>
                     </div>
                     <div className="text-sm text-white/60">Kelime Seviyesi</div>
                   </div>
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-white/80">
-                    Toplam İlerleme
-                  </span>
-                  <span className="text-sm font-semibold text-white">
-                    {progressPercentage}%
-                  </span>
-                </div>
-                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatCard
                   icon={BookOpen}
                   label="Öğrenilen Kelimeler"
@@ -197,3 +162,4 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     </div>
   );
 };
+
