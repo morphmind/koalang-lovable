@@ -9,6 +9,7 @@ export class RealtimeChat {
   private audio: AudioManager;
   private session: SessionManager;
   private speakingSlow: boolean = true;
+  private dc: RTCDataChannel | null = null;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -24,24 +25,30 @@ export class RealtimeChat {
 
   async init() {
     try {
-      // Kullanıcı bilgilerini al
+      // Get user data from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Get user profile
       const { data: userData } = await supabase
         .from('profiles')
         .select('username, first_name')
+        .eq('id', user.id)
         .single();
 
-      // Öğrenilen kelimeleri al
+      // Get learned words
       const { data: userProgress } = await supabase
         .from('user_progress')
         .select('word')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', user.id)
         .eq('learned', true);
 
       const learnedWords = userProgress?.map(p => p.word) || [];
       
+      // Set user info in session
       this.session.setUserInfo({
         nickname: userData?.username || 'friend',
-        level: 'A1', // Bu değeri veritabanından alabilirsiniz
+        level: 'A1', // You can add level to user_progress table later
         learnedWords: learnedWords
       });
 
@@ -63,7 +70,18 @@ export class RealtimeChat {
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
       await this.webrtc.addTrack(ms.getTracks()[0]);
 
-      await this.webrtc.setupDataChannel(this.onMessage);
+      await this.webrtc.setupDataChannel((event) => {
+        // Handle speech transcription events
+        const parsedEvent = JSON.parse(event.data);
+        if (parsedEvent.type === 'speech.transcription') {
+          this.onMessage({
+            type: 'input_text_transcribed',
+            text: parsedEvent.transcription
+          });
+        } else {
+          this.onMessage(parsedEvent);
+        }
+      });
 
       const offer = await this.webrtc.createOffer();
       
