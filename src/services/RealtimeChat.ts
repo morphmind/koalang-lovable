@@ -8,7 +8,6 @@ export class RealtimeChat {
   private webrtc: WebRTCManager;
   private audio: AudioManager;
   private session: SessionManager;
-  private speakingSlow: boolean = true;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -30,28 +29,36 @@ export class RealtimeChat {
 
   async init() {
     try {
-      // Get user data from Supabase
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       // Get user profile
-      const { data: userData } = await supabase
+      const { data: userData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name')
         .eq('id', user.id)
         .single();
 
-      // Get learned words
-      const { data: userProgress } = await supabase
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+      }
+
+      // Get learned words from user_progress
+      const { data: userProgress, error: progressError } = await supabase
         .from('user_progress')
         .select('word')
         .eq('user_id', user.id)
         .eq('learned', true);
 
+      if (progressError) {
+        console.error('Error fetching learned words:', progressError);
+      }
+
       const learnedWords = userProgress?.map(p => p.word) || [];
       console.log("Fetched learned words:", learnedWords);
-      
-      // Set user info in session
+
+      // Set complete user info
       this.session.setUserInfo({
         nickname: userData?.first_name || userData?.username || 'friend',
         level: 'A1', // You can add level to user_progress table later
@@ -80,7 +87,6 @@ export class RealtimeChat {
       await this.webrtc.setupDataChannel((event) => {
         try {
           if (event.type === 'speech.transcription') {
-            // Handle speech transcription
             this.onMessage({
               type: 'input_text_transcribed',
               text: event.transcription
@@ -118,11 +124,10 @@ export class RealtimeChat {
       await this.webrtc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
-      // Clear timeout to ensure everything is ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force update session settings to trigger immediate greeting
-      this.session.updateSessionSettings();
+      // Force immediate greeting
+      setTimeout(() => {
+        this.session.updateSessionSettings();
+      }, 1000);
 
     } catch (error) {
       console.error("Error initializing chat:", error);
@@ -143,8 +148,7 @@ export class RealtimeChat {
   }
 
   async sendMessage(text: string) {
-    const dc = this.webrtc.getDataChannel();
-    if (!dc || dc.readyState !== 'open') {
+    if (!this.webrtc.getDataChannel() || this.webrtc.getDataChannel()?.readyState !== 'open') {
       throw new Error('Data channel not ready');
     }
 
@@ -163,9 +167,9 @@ export class RealtimeChat {
         }
       };
 
-      dc.send(JSON.stringify(event));
+      this.webrtc.getDataChannel()?.send(JSON.stringify(event));
       await new Promise(resolve => setTimeout(resolve, 100));
-      dc.send(JSON.stringify({type: 'response.create'}));
+      this.webrtc.getDataChannel()?.send(JSON.stringify({type: 'response.create'}));
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;
@@ -173,7 +177,6 @@ export class RealtimeChat {
   }
 
   setSpeakingSpeed(slow: boolean) {
-    this.speakingSlow = slow;
     this.session.setSpeakingSpeed(slow);
   }
 

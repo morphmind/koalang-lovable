@@ -12,6 +12,7 @@ export class SessionManager {
   constructor(private sendEvent: (event: any) => void) {}
 
   setUserInfo(info: UserInfo) {
+    console.log("Setting user info:", info);
     this.userInfo = info;
     this.updateSessionSettings();
   }
@@ -22,7 +23,15 @@ export class SessionManager {
   }
 
   updateSessionSettings() {
-    console.log("Updating session settings with user info:", this.userInfo);
+    const nickname = this.userInfo.nickname || 'friend';
+    const level = this.userInfo.level || 'A1';
+    const learnedWords = this.userInfo.learnedWords || [];
+
+    console.log("Updating session with:", {
+      nickname,
+      level,
+      learnedWords
+    });
     
     const settings = {
       type: 'session.update',
@@ -31,32 +40,29 @@ export class SessionManager {
         voice: "alloy",
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
-        instructions: `You are chatting with ${this.userInfo.nickname || 'a friend'}. 
+        instructions: `CRITICAL INSTRUCTIONS - FOLLOW EXACTLY:
+1. Your VERY FIRST message must be EXACTLY:
+   "Hi ${nickname}! I'm Koaly, and I'll help you practice English."
 
-CRITICAL INSTRUCTIONS - FOLLOW EXACTLY:
-1. Your VERY FIRST message must ALWAYS be:
-   "Hi ${this.userInfo.nickname || 'friend'}! I'm Koaly, and I'll help you practice English."
+2. After greeting, ask how they are doing today.
 
-2. AFTER greeting, ask how they are doing today.
-
-3. In ALL responses:
-- Use ONLY English, never Turkish
-- Their English level is: ${this.userInfo.level || 'unknown'}
-- Use simple language and clear pronunciation
-- They know these words: ${this.userInfo.learnedWords?.join(', ') || 'No words learned yet'}
-- MUST use their learned words whenever possible
+3. Every response MUST:
+- Use ONLY English (no Turkish)
+- Match their level (${level})
+- Use simple clear language
+- Focus on these words they know: ${learnedWords.join(', ')}
+- Actively use their known words whenever possible
 - Be encouraging but conversational
-- Keep context from earlier messages
 
-${this.speakingSlow ? 'Speak slowly and clearly with pauses between words.' : 'Speak at a natural conversational pace.'}
+${this.speakingSlow ? 'SPEAK SLOWLY with clear pauses between words.' : 'Use a natural conversational pace.'}
 
-Message handling:
-- Transcribe all speech to text and share as messages
-- Reply to every message (spoken or typed)
-- Wait for user response after each message
-- No teaching instructions unless asked
-- If long pause, encourage more speech
-- Use at least one learned word in each response when possible`,
+Audio settings:
+- Always transcribe speech to text
+- Reply to all messages whether spoken or typed
+- Wait for user response after speaking
+- Only instruct if they ask for help
+- If user is quiet, gently encourage them to speak
+- Try to use at least one word they know in each response`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
