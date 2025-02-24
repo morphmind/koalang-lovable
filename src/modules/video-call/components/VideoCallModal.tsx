@@ -3,7 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
 import { CallControls } from './CallControls';
 import { Howl } from 'howler';
-import { Battery, Wifi, Phone, PhoneOff, MessageSquare } from 'lucide-react';
+import { Phone, PhoneOff, MessageSquare } from 'lucide-react';
 import { AnimatedKoaly } from './AnimatedKoaly';
 import { useRealtimeChat } from '../../../hooks/useRealtimeChat';
 import { useToast } from '@/components/ui/use-toast';
@@ -207,17 +207,9 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status Bar */}
-                  <div className="relative bg-transparent text-white px-6 py-2 flex justify-between items-center z-40">
+                  {/* Status Bar - Sadece saat gösteriliyor */}
+                  <div className="relative bg-transparent text-white px-6 py-2 flex justify-center items-center z-40">
                     <div className="text-sm font-medium">{currentTime}</div>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1">
-                        <Wifi size={16} strokeWidth={2} className="text-white" />
-                      </div>
-                      <div className="p-1">
-                        <Battery size={16} strokeWidth={2} className="text-white" />
-                      </div>
-                    </div>
                   </div>
 
                   <div className="bg-gradient-to-b from-[#1A1F2C] to-[#2C3444] h-full relative rounded-[38px] overflow-hidden">
