@@ -104,6 +104,12 @@ export const DashboardSidebar: React.FC = () => {
       description: 'Kelime öğrenmeye devam et'
     },
     {
+      icon: BookOpen,
+      label: 'Öğrendiğim Kelimeler',
+      href: '/dashboard/learned-words',
+      description: 'Öğrendiğin kelimeleri gör'
+    },
+    {
       icon: Activity,
       label: 'İlerlemem',
       href: '/dashboard/progress',
