@@ -27,10 +27,8 @@ export class RealtimeChat {
   }
 
   setUserInfo(info: UserInfo) {
+    console.log("Setting user info:", info);
     this.session.setUserInfo(info);
-    if (this.hasSessionStarted) {
-      this.session.updateSessionSettings();
-    }
   }
 
   async init() {
@@ -61,9 +59,9 @@ export class RealtimeChat {
       const learnedWords = userProgress?.map(p => p.word) || [];
       console.log("Fetched learned words:", learnedWords);
 
-      this.session.setUserInfo({
+      this.setUserInfo({
         nickname: userData?.first_name || userData?.username || 'friend',
-        level: 'A1',
+        level: 'A1',  // Set default level
         learnedWords: learnedWords
       });
 
@@ -74,7 +72,6 @@ export class RealtimeChat {
       }
 
       const EPHEMERAL_KEY = data.client_secret.value;
-
       const pc = await this.webrtc.createConnection();
       
       pc.ontrack = e => this.audio.setAudioStream(e.streams[0]);
@@ -82,11 +79,10 @@ export class RealtimeChat {
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
         if (pc.connectionState === 'connected' && !this.isDisconnected) {
-          console.log("Connection established, initializing session...");
-          setTimeout(() => {
-            this.hasSessionStarted = true;
-            this.session.updateSessionSettings();
-          }, 500);
+          console.log("Connection established, sending session update...");
+          // Send session update immediately after connection
+          this.hasSessionStarted = true;
+          this.session.updateSessionSettings();
         }
       };
 
@@ -95,14 +91,34 @@ export class RealtimeChat {
 
         try {
           console.log("Received event:", event);
-          if (event.type === 'speech.transcription') {
+          
+          if (event.type === 'session.created') {
+            console.log("Session created, updating settings...");
+            this.session.updateSessionSettings();
+          }
+          else if (event.type === 'speech.transcription') {
             this.onMessage({
               type: 'input_text_transcribed',
               text: event.transcription
             });
-          } else if (event.type === 'response.audio_transcript.delta') {
+          } 
+          else if (event.type === 'response.audio_transcript.delta') {
             this.onMessage(event);
-          } else {
+          } 
+          else if (event.type === 'conversation.item' && event.item.role === 'assistant') {
+            const transcript = event.item.content
+              .filter((c: any) => c.type === 'text')
+              .map((c: any) => c.text)
+              .join(' ');
+
+            if (transcript) {
+              this.onMessage({
+                type: 'response.text',
+                text: transcript
+              });
+            }
+          }
+          else {
             this.onMessage(event);
           }
         } catch (error) {
