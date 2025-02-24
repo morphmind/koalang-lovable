@@ -9,11 +9,6 @@ import { useLocation } from 'react-router-dom';
 
 interface DashboardHeaderProps {
   user: User;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  showLearned: boolean;
-  setShowLearned: (show: boolean) => void;
-  setShowQuiz: (show: boolean) => void;
 }
 
 interface StatCardProps {
@@ -48,14 +43,7 @@ const StatCard: React.FC<StatCardProps> = ({
   </div>
 );
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  user, 
-  searchQuery, 
-  setSearchQuery, 
-  showLearned, 
-  setShowLearned,
-  setShowQuiz 
-}) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ user }) => {
   const { stats: dashboardStats, isLoading, error } = useDashboard();
   const location = useLocation();
   const isMainDashboard = location.pathname === '/dashboard';
