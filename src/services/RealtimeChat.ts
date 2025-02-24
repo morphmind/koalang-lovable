@@ -9,6 +9,7 @@ export class RealtimeChat {
   private audio: AudioManager;
   private session: SessionManager;
   private isDisconnected: boolean = false;
+  private hasReceivedSessionCreated: boolean = false;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -77,16 +78,11 @@ export class RealtimeChat {
       
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
-        if (pc.connectionState === 'connected' && !this.isDisconnected) {
-          console.log("Connection established, updating session settings...");
-          setTimeout(() => {
-            this.session.updateSessionSettings();
-          }, 100); // Daha hızlı başlatmak için süreyi düşürdük
+        if (pc.connectionState === 'connected' && !this.isDisconnected && this.hasReceivedSessionCreated) {
+          console.log("Connection established and session created, updating session settings...");
+          this.session.updateSessionSettings();
         }
       };
-
-      const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
-      await this.webrtc.addTrack(ms.getTracks()[0]);
 
       await this.webrtc.setupDataChannel((event) => {
         if (this.isDisconnected) return;
@@ -99,8 +95,12 @@ export class RealtimeChat {
               text: event.transcription
             });
           } else if (event.type === 'session.created') {
-            console.log("Session created, updating settings...");
-            this.session.updateSessionSettings();
+            console.log("Session created, marking flag...");
+            this.hasReceivedSessionCreated = true;
+            if (pc.connectionState === 'connected') {
+              console.log("Connection is already established, updating session settings...");
+              this.session.updateSessionSettings();
+            }
           } else {
             this.onMessage(event);
           }
