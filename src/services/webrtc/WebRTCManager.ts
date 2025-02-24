@@ -24,7 +24,7 @@ export class WebRTCManager {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
 
-        // Özel mesaj işleme mantığı
+        // Custom message handling logic
         if (event.type === 'conversation.item' && event.item.role === 'assistant') {
           const transcript = event.item.content
             .filter((c: any) => c.type === 'text')
@@ -37,6 +37,8 @@ export class WebRTCManager {
               text: transcript
             });
           }
+        } else if (event.type === 'response.audio_transcript.delta' && event.delta) {
+          onMessage(event);
         } else {
           onMessage(event);
         }

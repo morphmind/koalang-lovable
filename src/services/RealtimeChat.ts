@@ -118,7 +118,7 @@ export class RealtimeChat {
       await this.webrtc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
-      // Delay to ensure everything is ready
+      // Clear timeout to ensure everything is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Force update session settings to trigger immediate greeting
