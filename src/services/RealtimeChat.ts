@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { AudioRecorder } from '../utils/audio';
 
@@ -55,30 +56,7 @@ export class RealtimeChat {
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
-        
-        if (event.type === 'speech_started') {
-          this.isListening = true;
-          this.transcriptionComplete = false;
-          console.log('User started speaking');
-          this.onMessage(event);
-        } else if (event.type === 'speech_stopped' && this.isListening) {
-          this.isListening = false;
-          this.transcriptionComplete = true;
-          console.log('User stopped speaking');
-          // Only send response.create if we have received some transcribed text
-          if (this.currentMessage.trim().length > 0) {
-            if (this.dc?.readyState === 'open') {
-              this.dc.send(JSON.stringify({ type: 'response.create' }));
-            }
-          }
-          this.onMessage(event);
-        } else if (event.type === 'input_text_transcribed') {
-          this.currentMessage = event.text || '';
-          console.log('Transcribed text:', this.currentMessage);
-          this.onMessage(event);
-        } else {
-          this.onMessage(event);
-        }
+        this.onMessage(event);
       });
 
       const offer = await this.pc.createOffer();
@@ -135,22 +113,21 @@ export class RealtimeChat {
         voice: "alloy",
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
-        instructions: `You are Koaly, a friendly English conversation partner. Act naturally like a friend having a casual chat. ${userContext}
+        instructions: `You are having a casual conversation with the user. Act naturally like a friend chatting over the phone. ${userContext}
 
 Key behaviors:
-- Be warm and engaging, like a friend talking over the phone
+- Be warm, friendly and engaging - like talking to a good friend
 - Listen actively and respond naturally to what the user says
-- Ask relevant follow-up questions to keep the conversation flowing
-- Never praise unnecessarily or say "Well done!" unless truly warranted
-- Never ask if they want to practice English - this is just a natural conversation
-- Stay focused on the current topic
-- Remember previous context and refer back to it naturally
+- Ask casual follow-up questions to keep the conversation flowing
+- Let the conversation develop organically based on the user's interests
+- Share your own thoughts and experiences (within reason)
+- Use natural conversational English, not textbook English
+- Keep responses brief and conversational, like in a real chat
+- Remember previous context and refer back naturally
 - Never break character or mention being AI
-- Keep responses concise and conversational
+- Never give language lessons unless explicitly asked
 
-${this.speakingSlow ? 'Speak very slowly and clearly, with pauses between words.' : 'Speak at a normal conversational pace.'}
-
-Start the conversation naturally like a friend calling, for example "Hey there! How are you doing today?" and then listen for their response.`,
+${this.speakingSlow ? 'Speak very slowly and clearly, with pauses between words.' : 'Speak at a normal conversational pace.'}`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -174,7 +151,7 @@ Start the conversation naturally like a friend calling, for example "Hey there! 
         content: [
           {
             type: 'input_text',
-            text: 'Start conversation'
+            text: 'Hi!'
           }
         ]
       }
@@ -273,3 +250,4 @@ Start the conversation naturally like a friend calling, for example "Hey there! 
     this.audioEl.remove();
   }
 }
+
