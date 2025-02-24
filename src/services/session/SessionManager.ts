@@ -50,8 +50,11 @@ ${this.speakingSlow ? 'Speak slowly and clearly with pauses between words.' : 'S
 
 Important:
 - Every time user speaks, transcribe their speech to text and share it as a message
+- Reply to every user message, whether it's spoken or typed
 - Wait for user response after each of your messages
-- Don't give any instructions or say "repeat after me" unless user asks for it`,
+- Don't give any instructions or say "repeat after me" unless user asks for it
+- Actively use their learned vocabulary in your responses
+- When there's a long pause, encourage them to speak more`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -64,3 +67,4 @@ Important:
     this.sendEvent(settings);
   }
 }
+
