@@ -235,39 +235,44 @@ export const DashboardSidebar: React.FC = () => {
       <div className="hidden lg:block">
         <button
           onClick={handlePracticeClick}
-          className="group relative w-full flex items-center gap-3 p-4 rounded-2xl 
+          className="group relative w-full flex items-center gap-4 p-4 rounded-2xl 
                    bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600
                    hover:shadow-xl transition-all duration-300
                    hover:-translate-y-1 overflow-hidden"
         >
-          <div className="flex items-center gap-3">
-            <div className="relative flex-shrink-0">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
-                           transition-transform duration-300 group-hover:scale-110">
-                <img src="/koaly-avatar.svg" alt="Koaly" className="w-full h-full" />
+          <div className="relative z-10 flex items-center gap-4 w-full">
+            <div className="flex-shrink-0">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
+                             transition-transform duration-300 group-hover:scale-110">
+                  <img src="/koaly-avatar.svg" alt="Koaly" className="w-full h-full" />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full 
+                             ring-2 ring-white animate-pulse"></div>
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full 
-                           ring-2 ring-white animate-pulse"></div>
             </div>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-semibold text-white truncate">Koaly ile Konuş</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                    <HeadphonesIcon size={12} className="text-white/90" />
-                    <span className="text-xs text-white/90">Sesli</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                    <MessageSquare size={12} className="text-white/90" />
-                    <span className="text-xs text-white/90">Mesaj</span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg font-semibold text-white truncate">Koaly ile Konuş</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                      <HeadphonesIcon size={12} className="text-white/90" />
+                      <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                      <MessageSquare size={12} className="text-white/90" />
+                      <span className="text-xs text-white/90 whitespace-nowrap">Mesaj</span>
+                    </div>
                   </div>
                 </div>
+                <p className="text-sm text-blue-100 truncate">Hemen İngilizce pratik yap!</p>
               </div>
-              <p className="text-sm text-blue-100 truncate">Hemen İngilizce pratik yap!</p>
             </div>
           </div>
 
-          {/* Hover and animation effects */}
+          {/* Hover ve animasyon efektleri */}
           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 
