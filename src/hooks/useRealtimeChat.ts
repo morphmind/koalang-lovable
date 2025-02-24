@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue } from '../utils/audio';
 import { useToast } from '@/components/ui/use-toast';
@@ -46,7 +45,6 @@ export class RealtimeChat {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
         
-        // VAD eventi ile kullanıcının konuşmasının bittiğini algılıyoruz
         if (event.type === 'speech_started') {
           this.isListening = true;
           console.log('User started speaking');
@@ -87,7 +85,6 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
-      // Wait for the connection to be fully established
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.updateSessionSettings();
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -195,14 +192,12 @@ export class RealtimeChat {
   disconnect() {
     console.log("Disconnecting chat...");
     
-    // Stop recording if active
     if (this.recorder) {
       console.log("Stopping recorder...");
       this.recorder.stop();
       this.recorder = null;
     }
     
-    // Stop all audio tracks
     if (this.audioEl.srcObject) {
       console.log("Stopping audio tracks...");
       const mediaStream = this.audioEl.srcObject as MediaStream;
@@ -213,14 +208,12 @@ export class RealtimeChat {
       this.audioEl.srcObject = null;
     }
     
-    // Close data channel
     if (this.dc) {
       console.log("Closing data channel...");
       this.dc.close();
       this.dc = null;
     }
     
-    // Close peer connection
     if (this.pc) {
       console.log("Closing peer connection...");
       try {
@@ -272,7 +265,7 @@ export const useRealtimeChat = () => {
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
       currentMessageRef.current = null;
-    } else if (event.type === 'response.audio_transcript.delta') {
+    } else if (event.type === 'response.audio_transcript.delta' && event.delta) {
       setMessages(prev => {
         if (!currentMessageRef.current || currentMessageRef.current.isUser) {
           const newMessage = { text: event.delta, isUser: false };
@@ -287,7 +280,7 @@ export const useRealtimeChat = () => {
           }];
         }
       });
-    } else if (event.type === 'input_text_transcribed') {
+    } else if (event.type === 'input_text_transcribed' && event.text) {
       setMessages(prev => {
         const newMessage = { text: event.text, isUser: true };
         currentMessageRef.current = newMessage;
@@ -421,4 +414,3 @@ const encodeAudioForAPI = (float32Array: Float32Array): string => {
   
   return btoa(binary);
 };
-
