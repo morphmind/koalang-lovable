@@ -15,6 +15,7 @@ export class RealtimeChat {
     this.session = new SessionManager((event) => {
       if (this.webrtc.getDataChannel()?.readyState === 'open') {
         try {
+          console.log('Sending session event:', event);
           this.webrtc.getDataChannel()?.send(JSON.stringify(event));
         } catch (error) {
           console.error('Error sending session event:', error);
@@ -79,6 +80,13 @@ export class RealtimeChat {
       
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
+        if (pc.connectionState === 'connected') {
+          // Force session update when connection is established
+          console.log("Connection established, updating session settings...");
+          setTimeout(() => {
+            this.session.updateSessionSettings();
+          }, 500);
+        }
       };
 
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -86,11 +94,15 @@ export class RealtimeChat {
 
       await this.webrtc.setupDataChannel((event) => {
         try {
+          console.log("Received event:", event);
           if (event.type === 'speech.transcription') {
             this.onMessage({
               type: 'input_text_transcribed',
               text: event.transcription
             });
+          } else if (event.type === 'session.created') {
+            console.log("Session created, updating settings...");
+            this.session.updateSessionSettings();
           } else {
             this.onMessage(event);
           }
@@ -123,11 +135,6 @@ export class RealtimeChat {
       
       await this.webrtc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
-
-      // Force immediate greeting
-      setTimeout(() => {
-        this.session.updateSessionSettings();
-      }, 1000);
 
     } catch (error) {
       console.error("Error initializing chat:", error);
