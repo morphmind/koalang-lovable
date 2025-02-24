@@ -132,66 +132,101 @@ export const DashboardSidebar: React.FC = () => {
   return (
     <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-6">
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
-        <div className="bg-gradient-to-br from-bs-primary to-bs-800">
-          <div className="flex flex-col items-center pt-8 pb-6">
-            <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4
-                         ring-4 ring-white/20 shadow-lg relative z-10">
-              {user?.avatar ? (
-                <img 
-                  src={user.avatar} 
-                  alt={user.username}
-                  className="w-full h-full rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="text-3xl font-bold text-white">
-                  {user?.username[0].toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-white mb-1">
-                {user?.username}
-              </h2>
-              <p className="text-sm text-white/70">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-
-          {earnedBadges.length > 0 && (
-            <div className="px-6 py-4 border-t border-white/10 bg-white/5">
-              <div className="flex flex-wrap gap-2">
-                {earnedBadges.map(badge => {
-                  const Icon = badge.icon;
-                  return (
-                    <div 
-                      key={badge.id}
-                      className="group relative flex items-center justify-center"
-                      title={`${badge.title} - ${badge.description}`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg ${badge.color} flex items-center justify-center
-                                   shadow-lg transition-transform group-hover:scale-110 group-hover:-translate-y-1`}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2
-                                   bg-white/95 backdrop-blur-sm rounded-lg shadow-xl text-xs whitespace-nowrap opacity-0 
-                                  group-hover:opacity-100 transition-all duration-200 pointer-events-none
-                                  min-w-[120px] z-[99999] transform -translate-y-2 group-hover:translate-y-0
-                                  border border-bs-100">
-                        <div className="font-medium text-bs-navy">{badge.title}</div>
-                        <div className="text-bs-navygri">{badge.description}</div>
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white 
-                                    transform rotate-45 border-r border-b border-bs-100"></div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* Profile Header */}
+        <div className="bg-gradient-to-br from-bs-primary to-bs-800 p-6">
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
+                           shadow-lg relative z-10 flex items-center justify-center">
+                {user?.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.username}
+                    className="w-full h-full rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="text-2xl font-bold text-white">
+                    {user?.username?.[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center
+                           ring-2 ring-white">
+                <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
               </div>
             </div>
-          )}
+
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-semibold text-white truncate">
+                {user?.username}
+              </h2>
+              <p className="text-sm text-white/70 mb-3">
+                {user?.email}
+              </p>
+              
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/90">İlerleme</span>
+                  <span className="text-white font-medium">
+                    %{Math.round((stats.learnedWords / stats.totalWords) * 100)}
+                  </span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all relative"
+                    style={{ 
+                      width: `${Math.round((stats.learnedWords / stats.totalWords) * 100)}%` 
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
+                                animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Badges Section */}
+        {earnedBadges.length > 0 && (
+          <div className="px-6 py-4 border-t border-bs-100 bg-gradient-to-b from-bs-50/50">
+            <h3 className="text-sm font-medium text-bs-navy mb-3 flex items-center gap-2">
+              <Award className="w-4 h-4 text-bs-primary" />
+              Kazanılan Rozetler
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {earnedBadges.map(badge => {
+                const Icon = badge.icon;
+                return (
+                  <div 
+                    key={badge.id}
+                    className="group relative"
+                  >
+                    <div className={`w-10 h-10 rounded-xl ${badge.color} flex items-center justify-center
+                                 shadow-lg transition-all duration-300 cursor-pointer
+                                 hover:scale-110 hover:-translate-y-1 hover:shadow-xl`}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100
+                                transition-all duration-200 pointer-events-none z-50 min-w-[140px] transform
+                                -translate-y-2 group-hover:translate-y-0">
+                      <div className="bg-white rounded-lg shadow-xl p-2 text-center border border-bs-100">
+                        <div className="font-medium text-bs-navy text-sm">{badge.title}</div>
+                        <div className="text-xs text-bs-navygri">{badge.description}</div>
+                      </div>
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white 
+                                  transform rotate-45 border-r border-b border-bs-100"></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Menu */}
         <nav className="p-3">
           <ul className="space-y-1">
             {menuItems.map((item) => {
@@ -204,7 +239,7 @@ export const DashboardSidebar: React.FC = () => {
                     to={item.href}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all relative group
                               ${isActive 
-                                ? 'bg-gradient-to-r from-bs-primary to-bs-800 text-white shadow-lg shadow-bs-primary/20 hover:shadow-xl' 
+                                ? 'bg-gradient-to-r from-bs-primary to-bs-800 text-white shadow-lg shadow-bs-primary/20' 
                                 : 'text-bs-navy hover:bg-bs-50 hover:-translate-y-0.5 hover:shadow-md'}`}
                   >
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all
@@ -214,16 +249,18 @@ export const DashboardSidebar: React.FC = () => {
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`font-medium mb-0.5 ${isActive ? 'group-hover:text-white' : ''}`}>{item.label}</div>
+                      <div className={`font-medium mb-0.5 ${isActive ? 'text-white' : ''}`}>
+                        {item.label}
+                      </div>
                       <div className={`text-xs truncate ${isActive 
-                        ? 'text-white/80 group-hover:text-white' 
+                        ? 'text-white/80' 
                         : 'text-bs-navygri group-hover:text-bs-navy'}`}>
                         {item.description}
                       </div>
                     </div>
-                    <ChevronRight className={`w-5 h-5 transition-transform
-                                          ${isActive ? 'text-white/80 group-hover:text-white' : 'text-bs-navygri group-hover:text-bs-navy'}
-                                          group-hover:translate-x-1`} />
+                    <ChevronRight className={`w-5 h-5 transition-transform ${isActive 
+                      ? 'text-white/80' 
+                      : 'text-bs-navygri group-hover:text-bs-navy'} group-hover:translate-x-1`} />
                   </Link>
                 </li>
               );
@@ -232,6 +269,7 @@ export const DashboardSidebar: React.FC = () => {
         </nav>
       </div>
 
+      {/* Koaly Chat Button */}
       <div className="hidden lg:block">
         <button
           onClick={handlePracticeClick}
@@ -255,7 +293,7 @@ export const DashboardSidebar: React.FC = () => {
             <div className="flex-1 min-w-0 text-left">
               <span className="text-lg font-semibold text-white block mb-1">Koaly ile Konuş</span>
               <p className="text-sm text-blue-100 mb-2">Hemen İngilizce pratik yap!</p>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
                   <HeadphonesIcon size={12} className="text-white/90" />
                   <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
@@ -275,6 +313,7 @@ export const DashboardSidebar: React.FC = () => {
         </button>
       </div>
 
+      {/* Quick Actions */}
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
         <div className="p-4 border-b border-bs-100">
           <div className="flex items-center gap-3">
@@ -310,35 +349,6 @@ export const DashboardSidebar: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <div className="bg-white rounded-2xl shadow-lg border border-bs-100 p-6 relative overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-medium text-bs-navy">Öğrenme İlerlemen</div>
-          <div className="text-2xl font-bold text-bs-primary">
-            %{Math.round((stats.learnedWords / stats.totalWords) * 100)}
-          </div>
-        </div>
-        <div className="h-2 bg-bs-50 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-bs-primary to-bs-800 rounded-full relative"
-            style={{ 
-              width: `${Math.round((stats.learnedWords / stats.totalWords) * 100)}%` 
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
-                          animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-          </div>
-        </div>
-        <div className="mt-4 text-xs text-bs-navygri">
-          {stats.learnedWords} kelime öğrendin
-        </div>
-        
-        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-bs-50 to-transparent 
-                     rounded-full blur-3xl -translate-y-24 translate-x-24" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-bs-50 to-transparent 
-                     rounded-full blur-2xl translate-y-16 -translate-x-16" />
-      </div>
     </aside>
   );
 };
-
