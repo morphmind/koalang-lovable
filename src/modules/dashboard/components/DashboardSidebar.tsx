@@ -5,7 +5,7 @@ import { useDashboard } from '../context/DashboardContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useWords } from '../../words/context/WordContext';
 import { useAuthPopup } from '../../auth/hooks/useAuthPopup';
-import { useVideoCall } from '../../video/hooks/useVideoCall';
+import { useVideoCall } from '../../video-call/context/VideoCallContext';
 import { HeadphonesIcon, MessageSquare } from 'lucide-react';
 
 export const DashboardSidebar: React.FC = () => {
