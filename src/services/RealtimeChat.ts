@@ -9,7 +9,6 @@ export class RealtimeChat {
   private audio: AudioManager;
   private session: SessionManager;
   private isDisconnected: boolean = false;
-  private hasSessionStarted: boolean = false;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -27,7 +26,6 @@ export class RealtimeChat {
   }
 
   setUserInfo(info: UserInfo) {
-    console.log("Setting user info:", info);
     this.session.setUserInfo(info);
   }
 
@@ -59,9 +57,9 @@ export class RealtimeChat {
       const learnedWords = userProgress?.map(p => p.word) || [];
       console.log("Fetched learned words:", learnedWords);
 
-      this.setUserInfo({
+      this.session.setUserInfo({
         nickname: userData?.first_name || userData?.username || 'friend',
-        level: 'A1',  // Set default level
+        level: 'A1',
         learnedWords: learnedWords
       });
 
@@ -72,53 +70,39 @@ export class RealtimeChat {
       }
 
       const EPHEMERAL_KEY = data.client_secret.value;
+
       const pc = await this.webrtc.createConnection();
       
       pc.ontrack = e => this.audio.setAudioStream(e.streams[0]);
       
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
-        if (pc.connectionState === 'connected' && !this.isDisconnected) {
-          console.log("Connection established, sending session update...");
-          // Send session update immediately after connection
-          this.hasSessionStarted = true;
-          this.session.updateSessionSettings();
+        if (pc.connectionState === 'connected') {
+          // Force session update when connection is established
+          console.log("Connection established, updating session settings...");
+          setTimeout(() => {
+            this.session.updateSessionSettings();
+          }, 500);
         }
       };
 
+      const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
+      await this.webrtc.addTrack(ms.getTracks()[0]);
+
       await this.webrtc.setupDataChannel((event) => {
-        if (this.isDisconnected) return;
+        if (this.isDisconnected) return; // Eğer bağlantı sonlandırıldıysa mesajları işleme
 
         try {
           console.log("Received event:", event);
-          
-          if (event.type === 'session.created') {
-            console.log("Session created, updating settings...");
-            this.session.updateSessionSettings();
-          }
-          else if (event.type === 'speech.transcription') {
+          if (event.type === 'speech.transcription') {
             this.onMessage({
               type: 'input_text_transcribed',
               text: event.transcription
             });
-          } 
-          else if (event.type === 'response.audio_transcript.delta') {
-            this.onMessage(event);
-          } 
-          else if (event.type === 'conversation.item' && event.item.role === 'assistant') {
-            const transcript = event.item.content
-              .filter((c: any) => c.type === 'text')
-              .map((c: any) => c.text)
-              .join(' ');
-
-            if (transcript) {
-              this.onMessage({
-                type: 'response.text',
-                text: transcript
-              });
-            }
-          }
-          else {
+          } else if (event.type === 'session.created') {
+            console.log("Session created, updating settings...");
+            this.session.updateSessionSettings();
+          } else {
             this.onMessage(event);
           }
         } catch (error) {
@@ -211,30 +195,19 @@ export class RealtimeChat {
   disconnect() {
     console.log("Disconnecting chat...");
     this.isDisconnected = true;
-    
     this.stopRecording();
     this.audio.cleanup();
     this.webrtc.cleanup();
     
+    // WebRTC bağlantısını zorla kapat
     const dataChannel = this.webrtc.getDataChannel();
     if (dataChannel) {
-      console.log("Closing data channel...");
       dataChannel.close();
     }
     
     const peerConnection = this.webrtc.getPeerConnection();
     if (peerConnection) {
-      console.log("Closing peer connection...");
       peerConnection.close();
-    }
-
-    if (this.webrtc.getPeerConnection()) {
-      const senders = this.webrtc.getPeerConnection()?.getSenders();
-      senders?.forEach(sender => {
-        if (sender.track) {
-          sender.track.stop();
-        }
-      });
     }
   }
 }

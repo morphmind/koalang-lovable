@@ -24,11 +24,13 @@ export class WebRTCManager {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
 
+        // Handle speech transcription
         if (event.type === 'speech.transcription') {
           onMessage(event);
           return;
         }
 
+        // Handle assistant message transcripts
         if (event.type === 'conversation.item' && event.item.role === 'assistant') {
           const transcript = event.item.content
             .filter((c: any) => c.type === 'text')
@@ -44,11 +46,13 @@ export class WebRTCManager {
           return;
         }
 
+        // Handle audio transcript deltas
         if (event.type === 'response.audio_transcript.delta' && event.delta) {
           onMessage(event);
           return;
         }
 
+        // Pass through any other events
         onMessage(event);
       } catch (error) {
         console.error('Error parsing message:', error);
@@ -70,23 +74,22 @@ export class WebRTCManager {
     await this.pc.setRemoteDescription(answer);
   }
 
+  async addTrack(track: MediaStreamTrack) {
+    if (!this.pc) throw new Error('Connection not initialized');
+    this.pc.addTrack(track);
+  }
+
   getDataChannel() {
     return this.dc;
   }
 
-  getPeerConnection() {
-    return this.pc;
-  }
-
   cleanup() {
     if (this.dc) {
-      console.log("Cleaning up data channel...");
       this.dc.close();
       this.dc = null;
     }
     
     if (this.pc) {
-      console.log("Cleaning up peer connection...");
       try {
         const senders = this.pc.getSenders();
         senders.forEach(sender => {
