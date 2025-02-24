@@ -10,8 +10,9 @@ import { useToast } from '@/components/ui/use-toast';
 
 export const VideoCallModal: React.FC = () => {
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const {
-    isOpen,
     callState,
     isMuted,
     isVideoOn,
@@ -93,6 +94,7 @@ export const VideoCallModal: React.FC = () => {
 
   const handleAcceptCall = async () => {
     try {
+      setIsConnecting(true);
       await connect();
       
       if (ringtoneRef.current) {
@@ -114,13 +116,15 @@ export const VideoCallModal: React.FC = () => {
             variant: "destructive",
           });
         });
-      }, 1000);
+        setIsConnecting(false);
+      }, 2000);
 
       toast({
         title: "Bağlantı başarılı",
         description: "Koaly ile konuşmaya başlayabilirsiniz",
       });
     } catch (error) {
+      setIsConnecting(false);
       console.error('Bağlantı hatası:', error);
       toast({
         title: "Bağlantı hatası",
@@ -256,11 +260,21 @@ export const VideoCallModal: React.FC = () => {
                             <button
                               onClick={handleAcceptCall}
                               className="flex flex-col items-center"
+                              disabled={isConnecting}
                             >
                               <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-2 hover:bg-green-700 transition-colors">
                                 <span className="text-2xl">📞</span>
                               </div>
-                              <span className="text-white text-sm">Kabul Et</span>
+                              <span className="text-white text-sm">
+                                {isConnecting ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Bağlanıyor...
+                                  </div>
+                                ) : (
+                                  'Kabul Et'
+                                )}
+                              </span>
                             </button>
                           </div>
                         </div>
