@@ -15,7 +15,13 @@ export class RealtimeChat {
     this.webrtc = new WebRTCManager();
     this.audio = new AudioManager();
     this.session = new SessionManager((event) => {
-      this.webrtc.getDataChannel()?.send(JSON.stringify(event));
+      if (this.webrtc.getDataChannel()?.readyState === 'open') {
+        try {
+          this.webrtc.getDataChannel()?.send(JSON.stringify(event));
+        } catch (error) {
+          console.error('Error sending session event:', error);
+        }
+      }
     });
   }
 
@@ -71,15 +77,18 @@ export class RealtimeChat {
       await this.webrtc.addTrack(ms.getTracks()[0]);
 
       await this.webrtc.setupDataChannel((event) => {
-        // Handle speech transcription events
-        const parsedEvent = JSON.parse(event.data);
-        if (parsedEvent.type === 'speech.transcription') {
-          this.onMessage({
-            type: 'input_text_transcribed',
-            text: parsedEvent.transcription
-          });
-        } else {
-          this.onMessage(parsedEvent);
+        try {
+          // Handle speech transcription events
+          if (event.type === 'speech.transcription') {
+            this.onMessage({
+              type: 'input_text_transcribed',
+              text: event.transcription
+            });
+          } else {
+            this.onMessage(event);
+          }
+        } catch (error) {
+          console.error('Error processing event:', error);
         }
       });
 
@@ -135,23 +144,28 @@ export class RealtimeChat {
       throw new Error('Data channel not ready');
     }
 
-    const event = {
-      type: 'conversation.item.create',
-      item: {
-        type: 'message',
-        role: 'user',
-        content: [
-          {
-            type: 'input_text',
-            text
-          }
-        ]
-      }
-    };
+    try {
+      const event = {
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [
+            {
+              type: 'input_text',
+              text
+            }
+          ]
+        }
+      };
 
-    dc.send(JSON.stringify(event));
-    await new Promise(resolve => setTimeout(resolve, 100));
-    dc.send(JSON.stringify({type: 'response.create'}));
+      dc.send(JSON.stringify(event));
+      await new Promise(resolve => setTimeout(resolve, 100));
+      dc.send(JSON.stringify({type: 'response.create'}));
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
   }
 
   setSpeakingSpeed(slow: boolean) {

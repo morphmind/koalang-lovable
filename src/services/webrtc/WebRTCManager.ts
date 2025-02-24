@@ -15,9 +15,18 @@ export class WebRTCManager {
     
     this.dc = this.pc.createDataChannel("oai-events");
     this.dc.addEventListener("message", (e) => {
-      const event = JSON.parse(e.data);
-      console.log("Received event:", event);
-      onMessage(event);
+      if (typeof e.data !== 'string') {
+        console.error('Received invalid message data:', e.data);
+        return;
+      }
+      
+      try {
+        const event = JSON.parse(e.data);
+        console.log("Received event:", event);
+        onMessage(event);
+      } catch (error) {
+        console.error('Error parsing message:', error);
+      }
     });
     return this.dc;
   }
@@ -66,3 +75,4 @@ export class WebRTCManager {
     }
   }
 }
+
