@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { User } from '../../auth/types';
-import { BookOpen, Award, Activity, Brain, ChevronRight, Star, Search } from 'lucide-react';
+import { BookOpen, Award, Activity, Star } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
@@ -194,47 +194,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
         )}
       </div>
-
-      {/* Quick Actions Section */}
-      {isMainDashboard && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Practice Quiz Card */}
-          <button 
-            onClick={() => setShowQuiz(true)}
-            className="group relative overflow-hidden bg-white rounded-xl p-6 shadow-sm hover:shadow-md
-                     transition-all duration-300 border border-gray-100 hover:border-bs-primary/20"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-bs-primary/10 flex items-center justify-center">
-                <Brain className="w-6 h-6 text-bs-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Hızlı Quiz</h3>
-                <p className="text-gray-600">Öğrendiğiniz kelimeleri test edin</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-bs-primary transition-colors" />
-            </div>
-          </button>
-
-          {/* Word Search Card */}
-          <button 
-            onClick={() => setShowLearned(true)}
-            className="group relative overflow-hidden bg-white rounded-xl p-6 shadow-sm hover:shadow-md
-                     transition-all duration-300 border border-gray-100 hover:border-bs-primary/20"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-bs-primary/10 flex items-center justify-center">
-                <Search className="w-6 h-6 text-bs-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Kelime Ara</h3>
-                <p className="text-gray-600">Öğrendiğiniz kelimelerde arama yapın</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-bs-primary transition-colors" />
-            </div>
-          </button>
-        </div>
-      )}
     </div>
   );
 };
