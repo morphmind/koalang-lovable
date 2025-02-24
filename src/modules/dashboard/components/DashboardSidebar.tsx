@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -17,7 +17,8 @@ export const DashboardSidebar: React.FC = () => {
   const { startCall } = useVideoCall();
   const location = useLocation();
 
-  const handleQuizClick = () => {
+  const handleQuizClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default navigation
     if (!user) {
       openAuthPopup();
       return;
@@ -26,7 +27,8 @@ export const DashboardSidebar: React.FC = () => {
     window.dispatchEvent(event);
   };
 
-  const handlePracticeClick = () => {
+  const handlePracticeClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default navigation
     if (!user) {
       openAuthPopup();
       return;
@@ -212,6 +214,7 @@ export const DashboardSidebar: React.FC = () => {
                 <li key={item.href}>
                   <Link
                     to={item.href}
+                    preventScrollReset={true}
                     className={`flex items-center gap-3 p-3 rounded-xl transition-all relative group cursor-pointer
                               ${isActive 
                                 ? 'bg-gradient-to-r from-bs-primary to-bs-800 text-white shadow-lg shadow-bs-primary/20' 
@@ -308,7 +311,7 @@ export const DashboardSidebar: React.FC = () => {
             role="button"
             tabIndex={0}
             onClick={handleQuizClick}
-            onKeyPress={(e) => e.key === 'Enter' && handleQuizClick()}
+            onKeyPress={(e) => e.key === 'Enter' && handleQuizClick(e as any)}
             className="w-full flex items-center gap-3 p-4 hover:bg-bs-50 transition-colors group cursor-pointer"
           >
             <div className="w-8 h-8 rounded-lg bg-bs-50 flex items-center justify-center
