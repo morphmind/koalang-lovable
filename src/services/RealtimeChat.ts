@@ -8,13 +8,12 @@ export class RealtimeChat {
   private webrtc: WebRTCManager;
   private audio: AudioManager;
   private session: SessionManager;
-  private isDisconnected: boolean = false;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
     this.audio = new AudioManager();
     this.session = new SessionManager((event) => {
-      if (this.webrtc.getDataChannel()?.readyState === 'open' && !this.isDisconnected) {
+      if (this.webrtc.getDataChannel()?.readyState === 'open') {
         try {
           console.log('Sending session event:', event);
           this.webrtc.getDataChannel()?.send(JSON.stringify(event));
@@ -31,9 +30,11 @@ export class RealtimeChat {
 
   async init() {
     try {
+      // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Get user profile
       const { data: userData, error: profileError } = await supabase
         .from('profiles')
         .select('username, first_name')
@@ -44,6 +45,7 @@ export class RealtimeChat {
         console.error('Error fetching user profile:', profileError);
       }
 
+      // Get learned words from user_progress
       const { data: userProgress, error: progressError } = await supabase
         .from('user_progress')
         .select('word')
@@ -57,9 +59,10 @@ export class RealtimeChat {
       const learnedWords = userProgress?.map(p => p.word) || [];
       console.log("Fetched learned words:", learnedWords);
 
+      // Set complete user info
       this.session.setUserInfo({
         nickname: userData?.first_name || userData?.username || 'friend',
-        level: 'A1',
+        level: 'A1', // You can add level to user_progress table later
         learnedWords: learnedWords
       });
 
@@ -90,8 +93,6 @@ export class RealtimeChat {
       await this.webrtc.addTrack(ms.getTracks()[0]);
 
       await this.webrtc.setupDataChannel((event) => {
-        if (this.isDisconnected) return; // Eğer bağlantı sonlandırıldıysa mesajları işleme
-
         try {
           console.log("Received event:", event);
           if (event.type === 'speech.transcription') {
@@ -146,9 +147,7 @@ export class RealtimeChat {
   }
 
   startRecording() {
-    if (!this.isDisconnected) {
-      this.audio.startRecording();
-    }
+    this.audio.startRecording();
   }
 
   stopRecording() {
@@ -156,8 +155,6 @@ export class RealtimeChat {
   }
 
   async sendMessage(text: string) {
-    if (this.isDisconnected) return;
-    
     if (!this.webrtc.getDataChannel() || this.webrtc.getDataChannel()?.readyState !== 'open') {
       throw new Error('Data channel not ready');
     }
@@ -187,27 +184,12 @@ export class RealtimeChat {
   }
 
   setSpeakingSpeed(slow: boolean) {
-    if (!this.isDisconnected) {
-      this.session.setSpeakingSpeed(slow);
-    }
+    this.session.setSpeakingSpeed(slow);
   }
 
   disconnect() {
     console.log("Disconnecting chat...");
-    this.isDisconnected = true;
-    this.stopRecording();
     this.audio.cleanup();
     this.webrtc.cleanup();
-    
-    // WebRTC bağlantısını zorla kapat
-    const dataChannel = this.webrtc.getDataChannel();
-    if (dataChannel) {
-      dataChannel.close();
-    }
-    
-    const peerConnection = this.webrtc.getPeerConnection();
-    if (peerConnection) {
-      peerConnection.close();
-    }
   }
 }

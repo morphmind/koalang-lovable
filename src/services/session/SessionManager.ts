@@ -14,6 +14,7 @@ export class SessionManager {
   setUserInfo(info: UserInfo) {
     console.log("Setting user info:", info);
     this.userInfo = info;
+    this.updateSessionSettings();
   }
 
   setSpeakingSpeed(slow: boolean) {
@@ -41,7 +42,7 @@ export class SessionManager {
         input_audio_format: "pcm16",
         instructions: `CRITICAL INSTRUCTIONS - FOLLOW EXACTLY:
 
-1. IMMEDIATELY start the conversation by saying EXACTLY:
+1. Your initial message MUST be EXACTLY:
 "Hi ${nickname}! I'm Koaly, your English practice buddy. How are you today?"
 
 2. All subsequent responses MUST:
@@ -66,9 +67,7 @@ Audio settings:
           type: "server_vad",
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 1000,
-          create_response: true,
-          interrupt_response: true
+          silence_duration_ms: 1000
         }
       }
     };
