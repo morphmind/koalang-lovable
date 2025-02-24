@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -239,8 +240,8 @@ export const DashboardSidebar: React.FC = () => {
                    hover:shadow-xl transition-all duration-300
                    hover:-translate-y-1 overflow-hidden"
         >
-          <div className="relative z-10 flex items-center gap-4 w-full">
-            <div className="flex-shrink-0">
+          <div className="relative z-10 flex items-start gap-4 w-full">
+            <div className="flex-shrink-0 flex items-center justify-center">
               <div className="relative">
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
                              transition-transform duration-300 group-hover:scale-110">
@@ -251,19 +252,17 @@ export const DashboardSidebar: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col">
-                <span className="text-lg font-semibold text-white mb-1">Koaly ile Konuş</span>
-                <p className="text-sm text-blue-100 mb-2">Hemen İngilizce pratik yap!</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                    <HeadphonesIcon size={12} className="text-white/90" />
-                    <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
-                    <MessageSquare size={12} className="text-white/90" />
-                    <span className="text-xs text-white/90 whitespace-nowrap">Mesaj</span>
-                  </div>
+            <div className="flex-1 min-w-0 text-left">
+              <span className="text-lg font-semibold text-white block mb-1">Koaly ile Konuş</span>
+              <p className="text-sm text-blue-100 mb-2">Hemen İngilizce pratik yap!</p>
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                  <HeadphonesIcon size={12} className="text-white/90" />
+                  <span className="text-xs text-white/90 whitespace-nowrap">Sesli</span>
+                </div>
+                <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                  <MessageSquare size={12} className="text-white/90" />
+                  <span className="text-xs text-white/90 whitespace-nowrap">Mesaj</span>
                 </div>
               </div>
             </div>
@@ -342,3 +341,4 @@ export const DashboardSidebar: React.FC = () => {
     </aside>
   );
 };
+
