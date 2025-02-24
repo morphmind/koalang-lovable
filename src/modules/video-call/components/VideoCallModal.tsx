@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -94,37 +93,45 @@ export const VideoCallModal: React.FC = () => {
 
   const handleAcceptCall = async () => {
     try {
-      setIsConnecting(true);
-      await connect();
-      
       if (ringtoneRef.current) {
         ringtoneRef.current.stop();
         ringtoneRef.current = null;
       }
+      
+      setIsConnecting(true);
+
+      // Play accept sound first
       if (acceptSoundRef.current) {
-        acceptSoundRef.current.play();
+        await new Promise(resolve => {
+          acceptSoundRef.current?.once('end', resolve);
+          acceptSoundRef.current?.play();
+        });
       }
 
+      // Accept the call first
       acceptCall();
 
-      setTimeout(() => {
-        startRecording().catch(error => {
-          console.error('Ses kaydı başlatılamadı:', error);
-          toast({
-            title: "Mikrofon hatası",
-            description: "Ses kaydı başlatılamadı. Lütfen mikrofon izinlerini kontrol edin.",
-            variant: "destructive",
-          });
-        });
-        setIsConnecting(false);
-        
-        sendMessage("Merhaba! Ben Koaly, sizinle pratik yapmaktan mutluluk duyacağım. Nasıl yardımcı olabilirim?");
-      }, 2000);
+      // Then connect to the chat service
+      await connect();
 
+      // Start recording after a short delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await startRecording().catch(error => {
+        console.error('Ses kaydı başlatılamadı:', error);
+        toast({
+          title: "Mikrofon hatası",
+          description: "Ses kaydı başlatılamadı. Lütfen mikrofon izinlerini kontrol edin.",
+          variant: "destructive",
+        });
+      });
+
+      setIsConnecting(false);
+      
       toast({
         title: "Bağlantı başarılı",
         description: "Koaly ile konuşmaya başlayabilirsiniz",
       });
+
     } catch (error) {
       setIsConnecting(false);
       console.error('Bağlantı hatası:', error);
@@ -133,6 +140,12 @@ export const VideoCallModal: React.FC = () => {
         description: "Koaly ile bağlantı kurulamadı. Lütfen tekrar deneyin.",
         variant: "destructive",
       });
+      
+      // Clean up on error
+      if (ringtoneRef.current) {
+        ringtoneRef.current.stop();
+        ringtoneRef.current = null;
+      }
     }
   };
 
@@ -287,7 +300,7 @@ export const VideoCallModal: React.FC = () => {
                         </div>
                       ) : callState === 'connected' && (
                         <>
-                          {/* Mesaj Alanı */}
+                          {/* Message Area */}
                           <div className="bg-[#2C3444]/80 backdrop-blur-lg rounded-2xl p-4 mb-4 h-48 overflow-y-auto shadow-xl">
                             <div className="space-y-3">
                               {messages.map((msg, index) => (
@@ -310,20 +323,7 @@ export const VideoCallModal: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Konuşma Hızı Butonu */}
-                          <button
-                            onClick={toggleSpeakingSpeed}
-                            className={`mb-4 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 
-                              ${isSpeakingSlow
-                                ? 'bg-[#9b87f5] hover:bg-[#7E69AB]'
-                                : 'bg-[#2C3444] hover:bg-[#3C4454]'
-                              } text-white shadow-lg`}
-                            disabled={isSpeaking}
-                          >
-                            {isSpeakingSlow ? 'Normal Hızda Konuş' : 'Yavaş Konuş'}
-                          </button>
-
-                          {/* Mesaj Gönderme Alanı - Yeniden Düzenlendi */}
+                          {/* Input Area */}
                           <div className="flex flex-col gap-3 mb-6">
                             <input
                               type="text"
@@ -370,4 +370,3 @@ export const VideoCallModal: React.FC = () => {
     </Transition>
   );
 };
-
