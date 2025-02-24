@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -14,6 +15,7 @@ export const DashboardSidebar: React.FC = () => {
   const { getLearnedWordsCount } = useWords();
   const { openAuthPopup } = useAuthPopup(); 
   const { startCall } = useVideoCall();
+  const navigate = useNavigate();
 
   const handleQuizClick = () => {
     if (!user) {
@@ -30,6 +32,11 @@ export const DashboardSidebar: React.FC = () => {
       return;
     }
     startCall();
+  };
+
+  const handleNavigate = (path: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(path);
   };
 
   const badges = React.useMemo(() => {
@@ -210,9 +217,10 @@ export const DashboardSidebar: React.FC = () => {
               
               return (
                 <li key={item.href}>
-                  <Link
-                    to={item.href}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-all relative group
+                  <a
+                    href={item.href}
+                    onClick={handleNavigate(item.href)}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all relative group cursor-pointer
                               ${isActive 
                                 ? 'bg-gradient-to-r from-bs-primary to-bs-800 text-white shadow-lg shadow-bs-primary/20' 
                                 : 'text-bs-navy hover:bg-bs-50 hover:-translate-y-0.5 hover:shadow-md'}`}
@@ -236,7 +244,7 @@ export const DashboardSidebar: React.FC = () => {
                     <ChevronRight className={`w-5 h-5 transition-transform ${isActive 
                       ? 'text-white/80' 
                       : 'text-bs-navygri group-hover:text-bs-navy'} group-hover:translate-x-1`} />
-                  </Link>
+                  </a>
                 </li>
               );
             })}
