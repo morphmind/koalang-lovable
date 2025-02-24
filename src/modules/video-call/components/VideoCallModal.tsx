@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -207,8 +208,8 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status Bar - Sadece saat gösteriliyor */}
-                  <div className="relative bg-transparent text-white px-6 py-2 flex justify-center items-center z-40">
+                  {/* Status Bar - Saat solda gösteriliyor */}
+                  <div className="relative bg-transparent text-white px-6 py-2 flex justify-start items-center z-40">
                     <div className="text-sm font-medium">{currentTime}</div>
                   </div>
 
@@ -369,3 +370,4 @@ export const VideoCallModal: React.FC = () => {
     </Transition>
   );
 };
+
