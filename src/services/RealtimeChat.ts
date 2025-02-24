@@ -9,7 +9,7 @@ export class RealtimeChat {
   private audio: AudioManager;
   private session: SessionManager;
   private isDisconnected: boolean = false;
-  private hasReceivedSessionCreated: boolean = false;
+  private hasSessionStarted: boolean = false;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -28,6 +28,9 @@ export class RealtimeChat {
 
   setUserInfo(info: UserInfo) {
     this.session.setUserInfo(info);
+    if (this.hasSessionStarted) {
+      this.session.updateSessionSettings();
+    }
   }
 
   async init() {
@@ -78,9 +81,12 @@ export class RealtimeChat {
       
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
-        if (pc.connectionState === 'connected' && !this.isDisconnected && this.hasReceivedSessionCreated) {
-          console.log("Connection established and session created, updating session settings...");
-          this.session.updateSessionSettings();
+        if (pc.connectionState === 'connected' && !this.isDisconnected) {
+          console.log("Connection established, initializing session...");
+          setTimeout(() => {
+            this.hasSessionStarted = true;
+            this.session.updateSessionSettings();
+          }, 500);
         }
       };
 
@@ -94,13 +100,8 @@ export class RealtimeChat {
               type: 'input_text_transcribed',
               text: event.transcription
             });
-          } else if (event.type === 'session.created') {
-            console.log("Session created, marking flag...");
-            this.hasReceivedSessionCreated = true;
-            if (pc.connectionState === 'connected') {
-              console.log("Connection is already established, updating session settings...");
-              this.session.updateSessionSettings();
-            }
+          } else if (event.type === 'response.audio_transcript.delta') {
+            this.onMessage(event);
           } else {
             this.onMessage(event);
           }
@@ -195,14 +196,10 @@ export class RealtimeChat {
     console.log("Disconnecting chat...");
     this.isDisconnected = true;
     
-    // Kaydı durdur
     this.stopRecording();
-    
-    // Audio ve WebRTC bağlantılarını temizle
     this.audio.cleanup();
     this.webrtc.cleanup();
     
-    // WebRTC bağlantısını zorla kapat
     const dataChannel = this.webrtc.getDataChannel();
     if (dataChannel) {
       console.log("Closing data channel...");
@@ -215,7 +212,6 @@ export class RealtimeChat {
       peerConnection.close();
     }
 
-    // Medya akışlarını durdur
     if (this.webrtc.getPeerConnection()) {
       const senders = this.webrtc.getPeerConnection()?.getSenders();
       senders?.forEach(sender => {

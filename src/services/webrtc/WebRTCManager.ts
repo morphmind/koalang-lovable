@@ -24,13 +24,11 @@ export class WebRTCManager {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
 
-        // Handle speech transcription
         if (event.type === 'speech.transcription') {
           onMessage(event);
           return;
         }
 
-        // Handle assistant message transcripts
         if (event.type === 'conversation.item' && event.item.role === 'assistant') {
           const transcript = event.item.content
             .filter((c: any) => c.type === 'text')
@@ -46,13 +44,11 @@ export class WebRTCManager {
           return;
         }
 
-        // Handle audio transcript deltas
         if (event.type === 'response.audio_transcript.delta' && event.delta) {
           onMessage(event);
           return;
         }
 
-        // Pass through any other events
         onMessage(event);
       } catch (error) {
         console.error('Error parsing message:', error);
@@ -72,11 +68,6 @@ export class WebRTCManager {
   async setRemoteDescription(answer: RTCSessionDescriptionInit) {
     if (!this.pc) throw new Error('Connection not initialized');
     await this.pc.setRemoteDescription(answer);
-  }
-
-  async addTrack(track: MediaStreamTrack) {
-    if (!this.pc) throw new Error('Connection not initialized');
-    this.pc.addTrack(track);
   }
 
   getDataChannel() {
