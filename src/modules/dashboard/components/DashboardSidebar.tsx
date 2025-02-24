@@ -135,24 +135,26 @@ export const DashboardSidebar: React.FC = () => {
         {/* Profile Header */}
         <div className="bg-gradient-to-br from-bs-primary to-bs-800 p-6">
           <div className="flex items-start gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
-                           shadow-lg relative z-10 flex items-center justify-center">
-                {user?.avatar ? (
-                  <img 
-                    src={user.avatar} 
-                    alt={user.username}
-                    className="w-full h-full rounded-xl object-cover"
-                  />
-                ) : (
-                  <div className="text-2xl font-bold text-white">
-                    {user?.username?.[0].toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center
-                           ring-2 ring-white">
-                <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
+            <div className="flex-shrink-0">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
+                             shadow-lg relative z-10 flex items-center justify-center">
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.username}
+                      className="w-full h-full rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="text-2xl font-bold text-white">
+                      {user?.username?.[0].toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center
+                             ring-2 ring-white">
+                  <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
+                </div>
               </div>
             </div>
 
@@ -196,7 +198,7 @@ export const DashboardSidebar: React.FC = () => {
               Kazanılan Rozetler
             </h3>
             <div className="flex flex-wrap gap-2">
-              {earnedBadges.map(badge => {
+              {earnedBadges.map((badge, index) => {
                 const Icon = badge.icon;
                 return (
                   <div 
@@ -209,15 +211,16 @@ export const DashboardSidebar: React.FC = () => {
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100
-                                transition-all duration-200 pointer-events-none z-50 min-w-[140px] transform
-                                -translate-y-2 group-hover:translate-y-0">
+                    <div className={`absolute bottom-full mb-2 opacity-0 group-hover:opacity-100
+                                transition-all duration-200 pointer-events-none z-50 min-w-[140px]
+                                ${index === 0 ? 'left-0' : 'left-1/2 -translate-x-1/2'}
+                                transform -translate-y-2 group-hover:translate-y-0`}>
                       <div className="bg-white rounded-lg shadow-xl p-2 text-center border border-bs-100">
                         <div className="font-medium text-bs-navy text-sm">{badge.title}</div>
                         <div className="text-xs text-bs-navygri">{badge.description}</div>
                       </div>
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white 
-                                  transform rotate-45 border-r border-b border-bs-100"></div>
+                      <div className={`absolute -bottom-1 ${index === 0 ? 'left-4' : 'left-1/2 -translate-x-1/2'} 
+                                  w-2 h-2 bg-white transform rotate-45 border-r border-b border-bs-100`}></div>
                     </div>
                   </div>
                 );
@@ -352,3 +355,4 @@ export const DashboardSidebar: React.FC = () => {
     </aside>
   );
 };
+
