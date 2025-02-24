@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -234,35 +235,43 @@ export const DashboardSidebar: React.FC = () => {
       <div className="hidden lg:block">
         <button
           onClick={handlePracticeClick}
-          className="w-full group relative flex items-center gap-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          className="group relative w-full flex items-center gap-3 p-4 rounded-2xl 
+                   bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600
+                   hover:shadow-xl transition-all duration-300
+                   hover:-translate-y-1 overflow-hidden"
         >
-          <div className="flex items-center gap-3 flex-1">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
+                           transition-transform duration-300 group-hover:scale-110">
                 <img src="/koaly-avatar.svg" alt="Koaly" className="w-full h-full" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white animate-pulse"></div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full 
+                           ring-2 ring-white animate-pulse"></div>
             </div>
-            <div className="flex flex-col items-start">
-              <span className="text-lg font-semibold">Koaly ile Konuş</span>
-              <span className="text-sm text-blue-100">Hemen sesli pratik yap!</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-semibold text-white truncate">Koaly ile Konuş</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                    <HeadphonesIcon size={12} className="text-white/90" />
+                    <span className="text-xs text-white/90">Sesli</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
+                    <MessageSquare size={12} className="text-white/90" />
+                    <span className="text-xs text-white/90">Mesaj</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-blue-100 truncate">Hemen İngilizce pratik yap!</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
-            <div className="flex flex-col items-center">
-              <HeadphonesIcon size={18} className="mb-1" />
-              <span className="text-xs">Sesli</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <MessageSquare size={18} className="mb-1" />
-              <span className="text-xs">Mesaj</span>
-            </div>
-          </div>
-
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:opacity-75 opacity-0 transition-opacity duration-300"></div>
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300 animate-pulse"></div>
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-300 animate-pulse delay-150"></div>
+          {/* Hover and animation effects */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
+                       translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 
+                       group-hover:opacity-50 transition duration-300 animate-pulse"></div>
         </button>
       </div>
 
