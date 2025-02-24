@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -6,24 +5,33 @@ import { useDashboard } from '../context/DashboardContext';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useWords } from '../../words/context/WordContext';
 import { useAuthPopup } from '../../auth/hooks/useAuthPopup';
+import { useVideoCall } from '../../video/hooks/useVideoCall';
+import { HeadphonesIcon, MessageSquare } from 'lucide-react';
 
 export const DashboardSidebar: React.FC = () => {
   const { user } = useAuth();
   const { stats } = useDashboard();
   const { getLearnedWordsCount } = useWords();
   const { openAuthPopup } = useAuthPopup(); 
+  const { startCall } = useVideoCall();
 
   const handleQuizClick = () => {
     if (!user) {
       openAuthPopup();
       return;
     }
-    // Quiz popup'ını aç 
     const event = new CustomEvent('showQuiz', { detail: { show: true } });
     window.dispatchEvent(event);
   };
 
-  // Kazanılan rozetleri hesapla
+  const handlePracticeClick = () => {
+    if (!user) {
+      openAuthPopup();
+      return;
+    }
+    startCall();
+  };
+
   const badges = React.useMemo(() => {
     if (!user) return [];
     
@@ -83,7 +91,6 @@ export const DashboardSidebar: React.FC = () => {
     ];
   }, [user, getLearnedWordsCount, stats]);
 
-  // Kazanılan rozetleri filtrele
   const earnedBadges = badges.filter(badge => badge.earned);
 
   const location = useLocation();
@@ -123,10 +130,8 @@ export const DashboardSidebar: React.FC = () => {
 
   return (
     <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-6">
-      {/* Profil Kartı */}
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
         <div className="bg-gradient-to-br from-bs-primary to-bs-800">
-          {/* Avatar */}
           <div className="flex flex-col items-center pt-8 pb-6">
             <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4
                          ring-4 ring-white/20 shadow-lg relative z-10">
@@ -152,7 +157,6 @@ export const DashboardSidebar: React.FC = () => {
             </div>
           </div>
 
-          {/* Rozetler */}
           {earnedBadges.length > 0 && (
             <div className="px-6 py-4 border-t border-white/10 bg-white/5">
               <div className="flex flex-wrap gap-2">
@@ -169,7 +173,6 @@ export const DashboardSidebar: React.FC = () => {
                         <Icon className="w-4 h-4 text-white" />
                       </div>
                       
-                      {/* Tooltip */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2
                                    bg-white/95 backdrop-blur-sm rounded-lg shadow-xl text-xs whitespace-nowrap opacity-0 
                                   group-hover:opacity-100 transition-all duration-200 pointer-events-none
@@ -188,7 +191,6 @@ export const DashboardSidebar: React.FC = () => {
           )}
         </div>
 
-        {/* Navigasyon */}
         <nav className="p-3">
           <ul className="space-y-1">
             {menuItems.map((item) => {
@@ -229,7 +231,41 @@ export const DashboardSidebar: React.FC = () => {
         </nav>
       </div>
 
-      {/* Hızlı Aksiyonlar */}
+      <div className="hidden lg:block">
+        <button
+          onClick={handlePracticeClick}
+          className="w-full group relative flex items-center gap-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        >
+          <div className="flex items-center gap-3 flex-1">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm">
+                <img src="/koaly-avatar.svg" alt="Koaly" className="w-full h-full" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white animate-pulse"></div>
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-lg font-semibold">Koaly ile Konuş</span>
+              <span className="text-sm text-blue-100">Hemen sesli pratik yap!</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
+            <div className="flex flex-col items-center">
+              <HeadphonesIcon size={18} className="mb-1" />
+              <span className="text-xs">Sesli</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <MessageSquare size={18} className="mb-1" />
+              <span className="text-xs">Mesaj</span>
+            </div>
+          </div>
+
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:opacity-75 opacity-0 transition-opacity duration-300"></div>
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300 animate-pulse"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-300 animate-pulse delay-150"></div>
+        </button>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
         <div className="p-4 border-b border-bs-100">
           <div className="flex items-center gap-3">
@@ -266,7 +302,6 @@ export const DashboardSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* İlerleme Özeti */}
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 p-6 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm font-medium text-bs-navy">Öğrenme İlerlemen</div>
@@ -289,7 +324,6 @@ export const DashboardSidebar: React.FC = () => {
           {stats.learnedWords} kelime öğrendin
         </div>
         
-        {/* Dekoratif Arka Plan */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-bs-50 to-transparent 
                      rounded-full blur-3xl -translate-y-24 translate-x-24" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-bs-50 to-transparent 
