@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -208,15 +207,15 @@ export const VideoCallModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status Bar - Güncellendi */}
+                  {/* Status Bar */}
                   <div className="relative bg-transparent text-white px-6 py-2 flex justify-between items-center z-40">
                     <div className="text-sm font-medium">{currentTime}</div>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1">
-                        <Wifi size={16} strokeWidth={2.5} className="text-white" />
+                    <div className="flex items-center gap-3">
+                      <div className="p-2">
+                        <Wifi size={18} strokeWidth={2} className="text-white" />
                       </div>
-                      <div className="p-1">
-                        <Battery size={16} strokeWidth={2.5} className="rotate-90 text-white" />
+                      <div className="p-2">
+                        <Battery size={20} className="text-white -rotate-90" />
                       </div>
                     </div>
                   </div>
@@ -378,4 +377,3 @@ export const VideoCallModal: React.FC = () => {
     </Transition>
   );
 };
-
