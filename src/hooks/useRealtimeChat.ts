@@ -11,6 +11,7 @@ export class RealtimeChat {
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
   private speakingSlow: boolean = false;
+  private currentMessage: string = '';
 
   constructor(private onMessage: (message: any) => void) {
     this.audioEl = document.createElement("audio");
@@ -27,9 +28,14 @@ export class RealtimeChat {
 
       const EPHEMERAL_KEY = data.client_secret.value;
 
-      this.pc = new RTCPeerConnection();
+      this.pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
 
       this.pc.ontrack = e => this.audioEl.srcObject = e.streams[0];
+      this.pc.onconnectionstatechange = () => {
+        console.log("Connection state:", this.pc?.connectionState);
+      };
 
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.pc.addTrack(ms.getTracks()[0]);
@@ -55,6 +61,10 @@ export class RealtimeChat {
         },
       });
 
+      if (!sdpResponse.ok) {
+        throw new Error(`Failed to connect: ${sdpResponse.statusText}`);
+      }
+
       const answer = {
         type: "answer" as RTCSdpType,
         sdp: await sdpResponse.text(),
@@ -63,6 +73,7 @@ export class RealtimeChat {
       await this.pc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
+      // Wait for the connection to be fully established
       await new Promise(resolve => setTimeout(resolve, 1000));
       this.updateSessionSettings();
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -133,8 +144,8 @@ export class RealtimeChat {
 
   stopRecording() {
     this.recorder?.stop();
+    this.recorder = null;
     if (this.dc?.readyState === 'open') {
-      console.log("Sending response.create after stopping recording");
       this.dc.send(JSON.stringify({ type: 'response.create' }));
     }
   }
@@ -171,32 +182,51 @@ export class RealtimeChat {
 
   disconnect() {
     console.log("Disconnecting chat...");
+    
+    // Stop recording if active
     if (this.recorder) {
       console.log("Stopping recorder...");
       this.recorder.stop();
       this.recorder = null;
     }
     
+    // Stop all audio tracks
     if (this.audioEl.srcObject) {
       console.log("Stopping audio tracks...");
-      const tracks = (this.audioEl.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
+      const mediaStream = this.audioEl.srcObject as MediaStream;
+      mediaStream.getTracks().forEach(track => {
+        track.stop();
+        console.log("Stopped track:", track.kind);
+      });
       this.audioEl.srcObject = null;
     }
     
+    // Close data channel
     if (this.dc) {
       console.log("Closing data channel...");
       this.dc.close();
       this.dc = null;
     }
     
+    // Close peer connection
     if (this.pc) {
       console.log("Closing peer connection...");
+      try {
+        const senders = this.pc.getSenders();
+        senders.forEach(sender => {
+          if (sender.track) {
+            sender.track.stop();
+          }
+        });
+      } catch (error) {
+        console.error("Error stopping senders:", error);
+      }
       this.pc.close();
       this.pc = null;
     }
 
     this.audioEl.remove();
+    this.currentMessage = '';
   }
 }
 
@@ -209,6 +239,7 @@ export const useRealtimeChat = () => {
   const [isSpeakingSlow, setIsSpeakingSlow] = useState(false);
   const chatRef = useRef<RealtimeChat | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
+  const currentMessageRef = useRef<{ text: string; isUser: boolean } | null>(null);
 
   useEffect(() => {
     audioQueueRef.current = new AudioQueue();
@@ -228,15 +259,26 @@ export const useRealtimeChat = () => {
       audioQueueRef.current?.addToQueue(audioData);
     } else if (event.type === 'response.audio.done') {
       setIsSpeaking(false);
+      currentMessageRef.current = null;
     } else if (event.type === 'response.audio_transcript.delta') {
       setMessages(prev => {
-        const newMessage = { text: event.delta, isUser: false };
-        return [...prev, newMessage];
+        if (!currentMessageRef.current || currentMessageRef.current.isUser) {
+          const newMessage = { text: event.delta, isUser: false };
+          currentMessageRef.current = newMessage;
+          return [...prev, newMessage];
+        } else {
+          const lastMessage = prev[prev.length - 1];
+          const updatedMessages = prev.slice(0, -1);
+          return [...updatedMessages, { 
+            ...lastMessage, 
+            text: lastMessage.text + event.delta 
+          }];
+        }
       });
     } else if (event.type === 'input_text_transcribed') {
-      // Kullanıcının konuşmasının transkripti geldiğinde
       setMessages(prev => {
         const newMessage = { text: event.text, isUser: true };
+        currentMessageRef.current = newMessage;
         return [...prev, newMessage];
       });
     }
@@ -367,3 +409,4 @@ const encodeAudioForAPI = (float32Array: Float32Array): string => {
   
   return btoa(binary);
 };
+
