@@ -11,6 +11,7 @@ export class RealtimeChat {
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
   private speakingSlow: boolean = false;
+  private isListening: boolean = false;
   private currentMessage: string = '';
 
   constructor(private onMessage: (message: any) => void) {
@@ -44,6 +45,19 @@ export class RealtimeChat {
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
+        
+        // VAD eventi ile kullanıcının konuşmasının bittiğini algılıyoruz
+        if (event.type === 'speech_started') {
+          this.isListening = true;
+          console.log('User started speaking');
+        } else if (event.type === 'speech_stopped' && this.isListening) {
+          this.isListening = false;
+          console.log('User stopped speaking, sending response.create');
+          if (this.dc?.readyState === 'open') {
+            this.dc.send(JSON.stringify({ type: 'response.create' }));
+          }
+        }
+        
         this.onMessage(event);
       });
 
@@ -87,7 +101,7 @@ export class RealtimeChat {
   private updateSessionSettings() {
     if (!this.dc || this.dc.readyState !== 'open') return;
 
-    console.log("Updating session settings, speaking slow:", this.speakingSlow);
+    console.log("Updating session settings");
     
     const settings = {
       type: 'session.update',
@@ -96,8 +110,9 @@ export class RealtimeChat {
         voice: "alloy",
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
-        speaking_rate: this.speakingSlow ? 0.7 : 1.0,
-        instructions: "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın.",
+        instructions: this.speakingSlow 
+          ? "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın. Kelimeleri çok yavaş ve net telaffuz edeceksin. Her kelimeyi vurgulayarak konuşacaksın."
+          : "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın.",
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -145,9 +160,6 @@ export class RealtimeChat {
   stopRecording() {
     this.recorder?.stop();
     this.recorder = null;
-    if (this.dc?.readyState === 'open') {
-      this.dc.send(JSON.stringify({ type: 'response.create' }));
-    }
   }
 
   async sendMessage(text: string) {
