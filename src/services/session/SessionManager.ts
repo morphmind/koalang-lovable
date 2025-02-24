@@ -39,29 +39,27 @@ export class SessionManager {
         voice: "alloy",
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
-        instructions: `CRITICAL INSTRUCTIONS - FOLLOW EXACTLY:
+        instructions: `CRITICAL INSTRUCTIONS:
 
-1. IMMEDIATELY start the conversation by saying EXACTLY:
-"Hi ${nickname}! I'm Koaly, your English practice buddy. How are you today?"
+Immediately start by saying "Hi ${nickname}! I'm Koaly, your English practice buddy. How are you today?"
 
-2. All subsequent responses MUST:
-- Use ONLY English (no other languages)
-- Match their level (${level})
+Then for all responses:
+- Use English only
+- Match level ${level}
 - Use simple clear language
-- Focus on these specific learned words: ${learnedWords.join(', ')}
-- Actively use their known words in each response
+- Use these known words: ${learnedWords.join(', ')}
 - Be encouraging and conversational
-- Ask follow-up questions to keep the conversation going
+- Ask questions to keep talking
 
 ${this.speakingSlow ? 'SPEAK SLOWLY with clear pauses between words.' : 'Use a natural conversational pace.'}
 
 Audio settings:
-- Always transcribe speech to text
-- Reply to all messages whether spoken or typed
-- Wait for user response after speaking
-- Only instruct if they ask for help
-- If user is quiet, gently encourage them to speak
-- Try to use at least one word they know in each response`,
+- Always transcribe speech
+- Reply to all messages
+- Wait for user response
+- Only instruct if asked
+- If user is quiet, encourage speaking
+- Try to use known words in responses`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,

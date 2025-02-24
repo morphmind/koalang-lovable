@@ -83,13 +83,19 @@ export class WebRTCManager {
     return this.dc;
   }
 
+  getPeerConnection() {
+    return this.pc;
+  }
+
   cleanup() {
     if (this.dc) {
+      console.log("Cleaning up data channel...");
       this.dc.close();
       this.dc = null;
     }
     
     if (this.pc) {
+      console.log("Cleaning up peer connection...");
       try {
         const senders = this.pc.getSenders();
         senders.forEach(sender => {

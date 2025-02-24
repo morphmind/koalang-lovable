@@ -77,12 +77,11 @@ export class RealtimeChat {
       
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
-        if (pc.connectionState === 'connected') {
-          // Force session update when connection is established
+        if (pc.connectionState === 'connected' && !this.isDisconnected) {
           console.log("Connection established, updating session settings...");
           setTimeout(() => {
             this.session.updateSessionSettings();
-          }, 500);
+          }, 100); // Daha hızlı başlatmak için süreyi düşürdük
         }
       };
 
@@ -90,7 +89,7 @@ export class RealtimeChat {
       await this.webrtc.addTrack(ms.getTracks()[0]);
 
       await this.webrtc.setupDataChannel((event) => {
-        if (this.isDisconnected) return; // Eğer bağlantı sonlandırıldıysa mesajları işleme
+        if (this.isDisconnected) return;
 
         try {
           console.log("Received event:", event);
@@ -195,19 +194,35 @@ export class RealtimeChat {
   disconnect() {
     console.log("Disconnecting chat...");
     this.isDisconnected = true;
+    
+    // Kaydı durdur
     this.stopRecording();
+    
+    // Audio ve WebRTC bağlantılarını temizle
     this.audio.cleanup();
     this.webrtc.cleanup();
     
     // WebRTC bağlantısını zorla kapat
     const dataChannel = this.webrtc.getDataChannel();
     if (dataChannel) {
+      console.log("Closing data channel...");
       dataChannel.close();
     }
     
     const peerConnection = this.webrtc.getPeerConnection();
     if (peerConnection) {
+      console.log("Closing peer connection...");
       peerConnection.close();
+    }
+
+    // Medya akışlarını durdur
+    if (this.webrtc.getPeerConnection()) {
+      const senders = this.webrtc.getPeerConnection()?.getSenders();
+      senders?.forEach(sender => {
+        if (sender.track) {
+          sender.track.stop();
+        }
+      });
     }
   }
 }
