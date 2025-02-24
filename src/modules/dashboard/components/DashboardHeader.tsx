@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { User } from '../../auth/types';
-import { BookOpen, Award, Activity, ArrowUpRight, LucideIcon } from 'lucide-react';
+import { BookOpen, Award, Activity } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
@@ -17,11 +17,10 @@ interface DashboardHeaderProps {
 }
 
 interface StatCardProps {
-  icon: LucideIcon;
+  icon: React.FC<any>;
   label: string;
   value: number;
   subValue?: string;
-  trend?: 'up' | 'down';
   iconColor?: string;
 }
 
@@ -32,27 +31,24 @@ const StatCard: React.FC<StatCardProps> = ({
   subValue,
   iconColor = "text-bs-primary"
 }) => (
-  <div className="relative group">
-    <div className="absolute inset-0 bg-gradient-to-r from-bs-primary/5 to-bs-800/5 
-                  rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
-    <div className="relative p-6 flex items-start gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center 
-                    bg-gradient-to-br from-bs-50 to-white ${iconColor} shadow-sm`}>
-        <Icon className="w-6 h-6" />
+  <div className="relative flex items-start gap-3 rounded-xl bg-white/10 backdrop-blur-sm p-4
+                border border-white/20 hover:border-white/30 transition-all group">
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center 
+                  bg-white/10 backdrop-blur-sm ${iconColor}`}>
+      <Icon className="w-5 h-5" />
+    </div>
+    <div>
+      <div className="text-sm font-medium text-white/70 mb-1">
+        {label}
       </div>
-      <div>
-        <div className="text-sm font-medium text-bs-navygri mb-1">
-          {label}
-        </div>
-        <div className="text-2xl font-bold text-bs-navy">
-          {value}
-        </div>
-        {subValue && (
-          <div className="text-sm text-bs-navygri mt-1">
-            {subValue}
-          </div>
-        )}
+      <div className="text-2xl font-bold text-white">
+        {value}
       </div>
+      {subValue && (
+        <div className="text-sm text-white/60 mt-1">
+          {subValue}
+        </div>
+      )}
     </div>
   </div>
 );
@@ -71,7 +67,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-bs-100 p-6 md:p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-bs-100 p-6">
         <div className="flex justify-center">
           <LoadingSpinner size="lg" />
         </div>
@@ -81,40 +77,40 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-bs-100 p-6 md:p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-bs-100 p-6">
         <ErrorMessage message={error} />
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
+    <div className="bg-gradient-to-br from-bs-primary to-bs-800 rounded-2xl shadow-lg overflow-hidden">
       {isMainDashboard && (
-        <>
-          {/* Modern Gradient Header */}
-          <div className="relative bg-gradient-to-br from-bs-primary to-bs-800 p-8 pb-16">
-            <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
-            
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl 
-                         -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-2xl 
-                         translate-y-1/2 -translate-x-1/2" />
-            
-            {/* Content */}
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur
-                              text-white/90 text-sm font-medium">
-                  koa<span className="text-bs-400">:lang</span>
-                </div>
-              </div>
-
+        <div className="relative p-8">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
+          
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl 
+                       -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-2xl 
+                       translate-y-1/2 -translate-x-1/2" />
+          
+          {/* Main Content */}
+          <div className="relative z-10">
+            <div className="flex items-end justify-between mb-8">
               <div className="max-w-2xl">
-                <h1 className="text-4xl font-bold text-white mb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur
+                                text-white/90 text-sm font-medium">
+                    koa<span className="text-bs-400">:lang</span>
+                  </div>
+                </div>
+
+                <h1 className="text-4xl font-bold text-white mb-2">
                   Merhaba, {user.username}! 👋
                 </h1>
                 <p className="text-lg text-white/80">
@@ -122,36 +118,37 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </p>
               </div>
             </div>
+
+            {/* Stats Grid - Integrated within the gradient section */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <StatCard
+                icon={BookOpen}
+                label="Öğrenilen Kelimeler"
+                value={dashboardStats.learnedWords}
+                subValue={`/ ${dashboardStats.totalWords} kelime`}
+                iconColor="text-emerald-400"
+              />
+
+              <StatCard
+                icon={Award}
+                label="Başarı Oranı"
+                value={dashboardStats.successRate}
+                subValue="doğruluk oranı"
+                iconColor="text-blue-400"
+              />
+
+              <StatCard
+                icon={Activity}
+                label="Günlük Seri"
+                value={dashboardStats.streak}
+                subValue="gün"
+                iconColor="text-orange-400"
+              />
+            </div>
           </div>
-
-          {/* Stats Section - Elevated Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-6 -mt-12 relative z-20">
-            <StatCard
-              icon={BookOpen}
-              label="Öğrenilen Kelimeler"
-              value={dashboardStats.learnedWords}
-              subValue={`/ ${dashboardStats.totalWords} kelime`}
-              iconColor="text-emerald-600"
-            />
-
-            <StatCard
-              icon={Award}
-              label="Başarı Oranı"
-              value={dashboardStats.successRate}
-              subValue="doğruluk oranı"
-              iconColor="text-blue-600"
-            />
-
-            <StatCard
-              icon={Activity}
-              label="Günlük Seri"
-              value={dashboardStats.streak}
-              subValue="gün"
-              iconColor="text-orange-600"
-            />
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
 };
+
