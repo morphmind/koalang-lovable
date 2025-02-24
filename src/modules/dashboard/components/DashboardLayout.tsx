@@ -21,15 +21,15 @@ const PracticeButton: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-24 right-6 z-50">
+      <div className="lg:fixed lg:bottom-24 lg:right-6 fixed bottom-0 left-0 right-0 z-50">
         <button
           onClick={handlePracticeClick}
-          className="group relative flex items-center gap-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          className="w-full lg:w-auto group relative flex items-center gap-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white px-6 py-4 lg:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
         >
           {/* Sol taraf - Avatar ve mesaj balonu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 lg:flex-initial justify-center lg:justify-start">
             <div className="relative">
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm">
+              <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm">
                 <img src="/koaly-avatar.svg" alt="Koaly" className="w-full h-full" />
               </div>
               {/* Online göstergesi */}
@@ -44,7 +44,7 @@ const PracticeButton: React.FC = () => {
           </div>
 
           {/* Sağ taraf - Özellik ikonları */}
-          <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
+          <div className="hidden lg:flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
             <div className="flex flex-col items-center">
               <Video size={18} className="mb-1" />
               <span className="text-xs">Video</span>
@@ -60,9 +60,9 @@ const PracticeButton: React.FC = () => {
           </div>
 
           {/* Efektler */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:opacity-75 opacity-0 transition-opacity duration-300"></div>
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300 animate-pulse"></div>
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-300 animate-pulse delay-150"></div>
+          <div className="absolute inset-0 lg:rounded-2xl bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:opacity-75 opacity-0 transition-opacity duration-300"></div>
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-400 lg:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-300 animate-pulse"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-400 lg:rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-300 animate-pulse delay-150"></div>
         </button>
       </div>
 
@@ -92,7 +92,7 @@ export const DashboardLayout: React.FC = () => {
           setShowLearned={setShowLearned}
         />
         
-        <main className="container mx-auto px-4 lg:px-8">
+        <main className="container mx-auto px-4 lg:px-8 pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative mt-24">
             {/* Sol Sidebar */}
             <div className="lg:col-span-3">
