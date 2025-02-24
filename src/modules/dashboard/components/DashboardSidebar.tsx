@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Award, Activity, Settings, ChevronRight, Zap, Brain, Target, Trophy, PenTool } from 'lucide-react';
@@ -134,31 +133,25 @@ export const DashboardSidebar: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-lg border border-bs-100 overflow-hidden">
         {/* Profile Header */}
         <div className="bg-gradient-to-br from-bs-primary to-bs-800 p-6">
-          <div className="flex items-start gap-4">
+          <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
-                             shadow-lg relative z-10 flex items-center justify-center">
-                  {user?.avatar ? (
-                    <img 
-                      src={user.avatar} 
-                      alt={user.username}
-                      className="w-full h-full rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="text-2xl font-bold text-white">
-                      {user?.username?.[0].toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center
-                             ring-2 ring-white">
-                  <div className="w-3 h-3 rounded-full bg-white animate-pulse"></div>
-                </div>
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 ring-2 ring-white/20 backdrop-blur-sm
+                           shadow-lg relative z-10 flex items-center justify-center">
+                {user?.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.username}
+                    className="w-full h-full rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="text-2xl font-bold text-white">
+                    {user?.username?.[0].toUpperCase()}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
               <h2 className="text-xl font-semibold text-white truncate">
                 {user?.username}
               </h2>
@@ -355,4 +348,3 @@ export const DashboardSidebar: React.FC = () => {
     </aside>
   );
 };
-
