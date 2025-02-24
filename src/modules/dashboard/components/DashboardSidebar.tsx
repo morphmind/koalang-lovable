@@ -155,30 +155,9 @@ export const DashboardSidebar: React.FC = () => {
               <h2 className="text-xl font-semibold text-white truncate">
                 {user?.username}
               </h2>
-              <p className="text-sm text-white/70 mb-3">
+              <p className="text-sm text-white/70">
                 {user?.email}
               </p>
-              
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/90">İlerleme</span>
-                  <span className="text-white font-medium">
-                    %{Math.round((stats.learnedWords / stats.totalWords) * 100)}
-                  </span>
-                </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all relative"
-                    style={{ 
-                      width: `${Math.round((stats.learnedWords / stats.totalWords) * 100)}%` 
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
-                                animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
