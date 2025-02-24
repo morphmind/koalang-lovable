@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AudioRecorder, AudioQueue } from '../utils/audio';
 import { useToast } from '@/components/ui/use-toast';
@@ -9,13 +10,25 @@ export class RealtimeChat {
   private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
-  private speakingSlow: boolean = false;
+  private speakingSlow: boolean = true; // Start with slow speaking mode
   private isListening: boolean = false;
   private currentMessage: string = '';
+  private userInfo: {
+    nickname?: string;
+    level?: string;
+    learnedWords?: string[];
+  } = {};
 
   constructor(private onMessage: (message: any) => void) {
     this.audioEl = document.createElement("audio");
     this.audioEl.autoplay = true;
+  }
+
+  setUserInfo(info: { nickname?: string; level?: string; learnedWords?: string[] }) {
+    this.userInfo = info;
+    if (this.dc?.readyState === 'open') {
+      this.updateSessionSettings();
+    }
   }
 
   async init() {
@@ -100,6 +113,12 @@ export class RealtimeChat {
 
     console.log("Updating session settings");
     
+    const userContext = `User's English level is ${this.userInfo.level || 'unknown'}. ${
+      this.userInfo.learnedWords?.length 
+        ? `They have learned these words: ${this.userInfo.learnedWords.join(', ')}.` 
+        : 'They haven\'t learned any words yet.'
+    }`;
+    
     const settings = {
       type: 'session.update',
       session: {
@@ -108,8 +127,8 @@ export class RealtimeChat {
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
         instructions: this.speakingSlow 
-          ? "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın. Kelimeleri çok yavaş ve net telaffuz edeceksin. Her kelimeyi vurgulayarak konuşacaksın."
-          : "Sen bir İngilizce dil pratik arkadaşısın. Kullanıcı ile İngilizce pratik yapacaksın. Onunla günlük konulardan sohbet edip İngilizce konuşma pratiği yapmalarına yardımcı olacaksın. Her zaman nazik, sabırlı ve yardımsever olacaksın.",
+          ? `You are an English practice partner. Your name is Koaly. ${userContext} The user's nickname is ${this.userInfo.nickname || 'unknown'}. Start by greeting them by their nickname and asking how they would like to be addressed during the conversation. Always speak very slowly and clearly, emphasizing each word individually with clear pauses between them. Focus on using vocabulary appropriate for their level.`
+          : `You are an English practice partner. Your name is Koaly. ${userContext} Always be kind, patient and helpful. Focus on using vocabulary appropriate for their level.`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -231,7 +250,6 @@ export class RealtimeChat {
     }
 
     this.audioEl.remove();
-    this.currentMessage = '';
   }
 }
 
@@ -241,7 +259,7 @@ export const useRealtimeChat = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSpeakingSlow, setIsSpeakingSlow] = useState(false);
+  const [isSpeakingSlow, setIsSpeakingSlow] = useState(true);
   const chatRef = useRef<RealtimeChat | null>(null);
   const audioQueueRef = useRef<AudioQueue | null>(null);
   const currentMessageRef = useRef<{ text: string; isUser: boolean } | null>(null);
@@ -295,7 +313,26 @@ export const useRealtimeChat = () => {
         return;
       }
 
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('username')
+        .single();
+
+      const { data: userProgress } = await supabase
+        .from('user_progress')
+        .select('word')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('learned', true);
+
       chatRef.current = new RealtimeChat(handleMessage);
+      
+      // Set user info before initializing
+      chatRef.current.setUserInfo({
+        nickname: userData?.username || 'friend',
+        level: 'A1', // You should get this from user's profile
+        learnedWords: userProgress?.map(p => p.word) || []
+      });
+      
       await chatRef.current.init();
       setIsConnected(true);
       
