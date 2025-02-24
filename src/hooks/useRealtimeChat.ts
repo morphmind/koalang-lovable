@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { RealtimeChat } from '../services/RealtimeChat';
 import { AudioQueue } from '../utils/audio';
+import { encodeAudioForAPI } from '../utils/audioEncoder';
 
 export const useRealtimeChat = () => {
   const { toast } = useToast();
@@ -105,10 +106,9 @@ export const useRealtimeChat = () => {
 
       chatRef.current?.setAudioDataHandler((audioData) => {
         if (chatRef.current?.dc?.readyState === 'open') {
-          const encodedAudio = encodeAudioForAPI(audioData);
           chatRef.current.dc.send(JSON.stringify({
             type: 'input_audio_buffer.append',
-            audio: encodedAudio
+            audio: encodeAudioForAPI(audioData)
           }));
         }
       });
@@ -178,23 +178,4 @@ export const useRealtimeChat = () => {
     connect,
     toggleSpeakingSpeed,
   };
-};
-
-const encodeAudioForAPI = (float32Array: Float32Array): string => {
-  const int16Array = new Int16Array(float32Array.length);
-  for (let i = 0; i < float32Array.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32Array[i]));
-    int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  
-  const uint8Array = new Uint8Array(int16Array.buffer);
-  let binary = '';
-  const chunkSize = 0x8000;
-  
-  for (let i = 0; i < uint8Array.length; i += chunkSize) {
-    const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
-    binary += String.fromCharCode.apply(null, Array.from(chunk));
-  }
-  
-  return btoa(binary);
 };
