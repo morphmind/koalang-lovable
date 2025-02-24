@@ -10,9 +10,10 @@ export class RealtimeChat {
   private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
   private onAudioData: ((data: Float32Array) => void) | null = null;
-  private speakingSlow: boolean = true; // Start with slow speaking mode
+  private speakingSlow: boolean = true;
   private isListening: boolean = false;
   private currentMessage: string = '';
+  private transcriptionComplete: boolean = false;
   private userInfo: {
     nickname?: string;
     level?: string;
@@ -60,13 +61,21 @@ export class RealtimeChat {
         
         if (event.type === 'speech_started') {
           this.isListening = true;
+          this.transcriptionComplete = false;
           console.log('User started speaking');
         } else if (event.type === 'speech_stopped' && this.isListening) {
           this.isListening = false;
-          console.log('User stopped speaking, sending response.create');
-          if (this.dc?.readyState === 'open') {
-            this.dc.send(JSON.stringify({ type: 'response.create' }));
+          this.transcriptionComplete = true;
+          console.log('User stopped speaking');
+          // Only send response.create if we have received some transcribed text
+          if (this.currentMessage.trim().length > 0) {
+            if (this.dc?.readyState === 'open') {
+              this.dc.send(JSON.stringify({ type: 'response.create' }));
+            }
           }
+        } else if (event.type === 'input_text_transcribed') {
+          this.currentMessage = event.text || '';
+          console.log('Transcribed text:', this.currentMessage);
         }
         
         this.onMessage(event);
@@ -111,7 +120,7 @@ export class RealtimeChat {
   private updateSessionSettings() {
     if (!this.dc || this.dc.readyState !== 'open') return;
 
-    console.log("Updating session settings");
+    console.log("Updating session settings with user info:", this.userInfo);
     
     const userContext = `User's English level is ${this.userInfo.level || 'unknown'}. ${
       this.userInfo.learnedWords?.length 
@@ -127,8 +136,8 @@ export class RealtimeChat {
         output_audio_format: "pcm16",
         input_audio_format: "pcm16",
         instructions: this.speakingSlow 
-          ? `You are an English practice partner. Your name is Koaly. ${userContext} The user's nickname is ${this.userInfo.nickname || 'unknown'}. Start by greeting them by their nickname and asking how they would like to be addressed during the conversation. Always speak very slowly and clearly, emphasizing each word individually with clear pauses between them. Focus on using vocabulary appropriate for their level.`
-          : `You are an English practice partner. Your name is Koaly. ${userContext} Always be kind, patient and helpful. Focus on using vocabulary appropriate for their level.`,
+          ? `You are an English practice partner. Your name is Koaly. ${userContext} The user's nickname is ${this.userInfo.nickname || 'unknown'}. Start by greeting them by their nickname and asking how they would like to be addressed during the conversation. Always speak very slowly and clearly, emphasizing each word individually with clear pauses between them. Focus on using vocabulary from their learned words list when possible, and keep the conversation at their level. Never say "Well done" or similar praise unless they've actually accomplished something specific. Maintain natural conversation flow.`
+          : `You are an English practice partner. Your name is Koaly. ${userContext} Always be kind, patient and helpful. Focus on using vocabulary appropriate for their level. Maintain natural conversation flow.`,
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -152,7 +161,7 @@ export class RealtimeChat {
         content: [
           {
             type: 'input_text',
-            text: "Hi! Could you introduce yourself and start our conversation?"
+            text: `Hi Koaly!`
           }
         ]
       }
@@ -203,7 +212,6 @@ export class RealtimeChat {
   }
 
   setSpeakingSpeed(slow: boolean) {
-    console.log("Setting speaking speed:", slow);
     this.speakingSlow = slow;
     this.updateSessionSettings();
   }
@@ -264,13 +272,6 @@ export const useRealtimeChat = () => {
   const audioQueueRef = useRef<AudioQueue | null>(null);
   const currentMessageRef = useRef<{ text: string; isUser: boolean } | null>(null);
 
-  useEffect(() => {
-    audioQueueRef.current = new AudioQueue();
-    return () => {
-      chatRef.current?.disconnect();
-    };
-  }, []);
-
   const handleMessage = useCallback((event: any) => {
     console.log('Received message:', event);
     
@@ -299,6 +300,7 @@ export const useRealtimeChat = () => {
         }
       });
     } else if (event.type === 'input_text_transcribed' && event.text) {
+      console.log('Setting user message:', event.text);
       setMessages(prev => {
         const newMessage = { text: event.text, isUser: true };
         currentMessageRef.current = newMessage;
@@ -329,7 +331,7 @@ export const useRealtimeChat = () => {
       // Set user info before initializing
       chatRef.current.setUserInfo({
         nickname: userData?.username || 'friend',
-        level: 'A1', // You should get this from user's profile
+        level: 'A1', // Get this from user's profile when available
         learnedWords: userProgress?.map(p => p.word) || []
       });
       
@@ -340,6 +342,8 @@ export const useRealtimeChat = () => {
         title: "Bağlantı başarılı",
         description: "Koaly ile konuşmaya başlayabilirsiniz",
       });
+
+      audioQueueRef.current = new AudioQueue();
     } catch (error) {
       console.error('Bağlantı hatası:', error);
       toast({
@@ -419,6 +423,12 @@ export const useRealtimeChat = () => {
     });
   }, [toast]);
 
+  useEffect(() => {
+    return () => {
+      chatRef.current?.disconnect();
+    };
+  }, []);
+
   return {
     messages,
     isConnected,
@@ -451,3 +461,4 @@ const encodeAudioForAPI = (float32Array: Float32Array): string => {
   
   return btoa(binary);
 };
+
