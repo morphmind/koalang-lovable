@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -117,6 +116,8 @@ export const VideoCallModal: React.FC = () => {
           });
         });
         setIsConnecting(false);
+        
+        sendMessage("Merhaba! Ben Koaly, sizinle pratik yapmaktan mutluluk duyacağım. Nasıl yardımcı olabilirim?");
       }, 2000);
 
       toast({
@@ -234,8 +235,10 @@ export const VideoCallModal: React.FC = () => {
                             </div>
                           </div>
                           {callState === 'connected' && (
-                            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                              {isRecording ? 'Dinliyor...' : (isSpeaking ? 'Konuşuyor' : 'HD')}
+                            <div className={`absolute -bottom-2 left-1/2 transform -translate-x-1/2 
+                              ${isRecording ? 'bg-green-500' : 'bg-blue-500'} 
+                              text-white text-xs px-3 py-1 rounded-full transition-all duration-300`}>
+                              {isRecording && !isSpeaking ? 'Dinliyor...' : (isSpeaking ? 'Konuşuyor' : 'HD')}
                             </div>
                           )}
                         </div>
