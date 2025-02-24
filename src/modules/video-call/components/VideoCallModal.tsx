@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useVideoCall } from '../context/VideoCallContext';
@@ -327,28 +326,28 @@ export const VideoCallModal: React.FC = () => {
                             {isSpeakingSlow ? 'Normal Hızda Konuş' : 'Yavaş Konuş'}
                           </button>
 
-                          {/* Mesaj Gönderme Alanı */}
-                          <div className="flex gap-3 mb-6">
+                          {/* Mesaj Gönderme Alanı - Yeniden Düzenlendi */}
+                          <div className="flex flex-col gap-3 mb-6">
                             <input
                               type="text"
                               value={userInput}
                               onChange={(e) => setUserInput(e.target.value)}
                               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                              className="flex-1 bg-[#2C3444]/50 backdrop-blur-sm text-white border border-white/10 rounded-xl px-4 py-3 
-                                     focus:outline-none focus:ring-2 focus:ring-[#9b87f5] shadow-lg"
+                              className="w-full bg-[#2C3444]/50 backdrop-blur-sm text-white border border-white/10 rounded-xl px-4 py-3 
+                                         focus:outline-none focus:ring-2 focus:ring-[#9b87f5] shadow-lg"
                               placeholder="Mesajınızı yazın..."
                             />
                             <button
                               onClick={handleSendMessage}
-                              className="bg-[#9b87f5] text-white rounded-xl px-6 py-3 hover:bg-[#7E69AB] transition-colors 
-                                     focus:outline-none focus:ring-2 focus:ring-[#9b87f5] shadow-lg flex items-center gap-2"
+                              className="w-full bg-[#9b87f5] text-white rounded-xl px-6 py-3 hover:bg-[#7E69AB] transition-colors 
+                                         focus:outline-none focus:ring-2 focus:ring-[#9b87f5] shadow-lg flex items-center justify-center gap-2"
                             >
                               <MessageSquare size={18} />
                               <span>Gönder</span>
                             </button>
                           </div>
 
-                          {/* Arama Kontrolleri */}
+                          {/* Call Controls */}
                           <CallControls
                             isMuted={isMuted}
                             isVideoOn={isVideoOn}
@@ -374,4 +373,3 @@ export const VideoCallModal: React.FC = () => {
     </Transition>
   );
 };
-
