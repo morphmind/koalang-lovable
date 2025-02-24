@@ -127,39 +127,37 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     Merhaba, {user.username}! 👋
                   </h1>
                   <p className="text-lg text-white/80">
-                    Bugün öğrenmeye devam edelim.
+                    Bugün öğrenmeye devam edelim. İşte ilerleme durumunuz:
                   </p>
                 </div>
 
-                {/* Search and Filters */}
-                <div className="flex items-center gap-4">
-                  {/* Search Input */}
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-white/50" />
+                {/* User Level Badge */}
+                <div className="flex flex-col items-end">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="w-5 h-5 text-yellow-400" />
+                      <span className="text-white font-medium">{userLevel}</span>
                     </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Kelime veya anlam ara..."
-                      className="block w-64 pl-12 pr-4 py-3 border border-white/20 rounded-xl text-white
-                               bg-white/10 backdrop-blur-sm transition-all duration-200 placeholder:text-white/50
-                               focus:ring-2 focus:ring-white/20 focus:border-white/30 focus:outline-none
-                               hover:border-white/30"
-                    />
+                    <div className="text-sm text-white/60">Kelime Seviyesi</div>
                   </div>
+                </div>
+              </div>
 
-                  {/* Level Badge */}
-                  <div className="flex flex-col items-end">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Star className="w-5 h-5 text-yellow-400" />
-                        <span className="text-white font-medium">{userLevel}</span>
-                      </div>
-                      <div className="text-sm text-white/60">Kelime Seviyesi</div>
-                    </div>
-                  </div>
+              {/* Progress Bar */}
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-white/80">
+                    Toplam İlerleme
+                  </span>
+                  <span className="text-sm font-semibold text-white">
+                    {progressPercentage}%
+                  </span>
+                </div>
+                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
                 </div>
               </div>
 
@@ -196,6 +194,47 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
         )}
       </div>
+
+      {/* Quick Actions Section */}
+      {isMainDashboard && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Practice Quiz Card */}
+          <button 
+            onClick={() => setShowQuiz(true)}
+            className="group relative overflow-hidden bg-white rounded-xl p-6 shadow-sm hover:shadow-md
+                     transition-all duration-300 border border-gray-100 hover:border-bs-primary/20"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-bs-primary/10 flex items-center justify-center">
+                <Brain className="w-6 h-6 text-bs-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Hızlı Quiz</h3>
+                <p className="text-gray-600">Öğrendiğiniz kelimeleri test edin</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-bs-primary transition-colors" />
+            </div>
+          </button>
+
+          {/* Word Search Card */}
+          <button 
+            onClick={() => setShowLearned(true)}
+            className="group relative overflow-hidden bg-white rounded-xl p-6 shadow-sm hover:shadow-md
+                     transition-all duration-300 border border-gray-100 hover:border-bs-primary/20"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-bs-primary/10 flex items-center justify-center">
+                <Search className="w-6 h-6 text-bs-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Kelime Ara</h3>
+                <p className="text-gray-600">Öğrendiğiniz kelimelerde arama yapın</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-bs-primary transition-colors" />
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
