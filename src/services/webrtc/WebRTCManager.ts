@@ -23,7 +23,23 @@ export class WebRTCManager {
       try {
         const event = JSON.parse(e.data);
         console.log("Received event:", event);
-        onMessage(event);
+
+        // Özel mesaj işleme mantığı
+        if (event.type === 'conversation.item' && event.item.role === 'assistant') {
+          const transcript = event.item.content
+            .filter((c: any) => c.type === 'text')
+            .map((c: any) => c.text)
+            .join(' ');
+
+          if (transcript) {
+            onMessage({
+              type: 'response.text',
+              text: transcript
+            });
+          }
+        } else {
+          onMessage(event);
+        }
       } catch (error) {
         console.error('Error parsing message:', error);
       }

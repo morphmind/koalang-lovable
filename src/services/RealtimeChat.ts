@@ -9,7 +9,6 @@ export class RealtimeChat {
   private audio: AudioManager;
   private session: SessionManager;
   private speakingSlow: boolean = true;
-  private dc: RTCDataChannel | null = null;
 
   constructor(private onMessage: (message: any) => void) {
     this.webrtc = new WebRTCManager();
@@ -50,10 +49,11 @@ export class RealtimeChat {
         .eq('learned', true);
 
       const learnedWords = userProgress?.map(p => p.word) || [];
+      console.log("Fetched learned words:", learnedWords);
       
       // Set user info in session
       this.session.setUserInfo({
-        nickname: userData?.username || 'friend',
+        nickname: userData?.first_name || userData?.username || 'friend',
         level: 'A1', // You can add level to user_progress table later
         learnedWords: learnedWords
       });
@@ -69,6 +69,7 @@ export class RealtimeChat {
       const pc = await this.webrtc.createConnection();
       
       pc.ontrack = e => this.audio.setAudioStream(e.streams[0]);
+      
       pc.onconnectionstatechange = () => {
         console.log("Connection state:", pc.connectionState);
       };
@@ -78,8 +79,8 @@ export class RealtimeChat {
 
       await this.webrtc.setupDataChannel((event) => {
         try {
-          // Handle speech transcription events
           if (event.type === 'speech.transcription') {
+            // Handle speech transcription
             this.onMessage({
               type: 'input_text_transcribed',
               text: event.transcription
@@ -117,7 +118,10 @@ export class RealtimeChat {
       await this.webrtc.setRemoteDescription(answer);
       console.log("WebRTC connection established");
 
+      // Delay to ensure everything is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Force update session settings to trigger immediate greeting
       this.session.updateSessionSettings();
 
     } catch (error) {
