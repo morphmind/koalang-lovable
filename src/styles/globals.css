@@ -1,3 +1,4 @@
+
 /* Ek animasyon stilleri */
 @keyframes shimmer {
   0% {
@@ -45,7 +46,7 @@
   animation: float-slow-reverse 8s ease-in-out infinite;
 }
 
-/* Neumorphism karları için gerekli stiller */
+/* Neumorphism kartları için gerekli stiller */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -89,7 +90,7 @@
   --neuro-bg: #1f2937;
 }
 
-/* Neumorphism karların temel stili */
+/* Neumorphism kartların temel stili */
 .neuro-card {
   background: var(--neuro-bg);
   box-shadow: 8px 8px 16px var(--neuro-dark-shadow),
