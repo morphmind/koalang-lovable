@@ -9,19 +9,13 @@ import {
   Sparkles,
   Trophy,
   Globe2,
-  Rocket,
-  GraduationCap,
-  Headphones,
-  Gauge,
-  Puzzle,
-  LineChart
+  GraduationCap 
 } from 'lucide-react';
 
 export const CTASection: React.FC = () => {
   const { user } = useAuth();
   const { openAuthPopup } = useAuthPopup();
 
-  // Oxford Araştırma İstatistikleri
   const researchStats = [
     {
       icon: BookOpen,
@@ -51,21 +45,16 @@ export const CTASection: React.FC = () => {
 
   return (
     <>
-      {/* Oxford Araştırma Bölümü */}
       <section className="relative overflow-hidden py-24">
-        {/* Ana Arka Plan */}
         <div className="absolute inset-0 bg-gradient-to-br from-bs-navy via-bs-primary/80 to-bs-800 rounded-3xl" />
         
-        {/* Cam Görselleri ve Efektleri */}
         <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
         
-        {/* Glassmorphism Parçaları */}
         <div className="absolute top-0 left-0 w-[70%] h-[40%] bg-white/10 rounded-br-[100px] backdrop-blur-xl
                      border border-white/20 rotate-[10deg] translate-x-[-20%] translate-y-[-30%]" />
         <div className="absolute bottom-0 right-0 w-[50%] h-[60%] bg-white/5 rounded-tl-[100px] backdrop-blur-lg
                      border border-white/10 rotate-[-15deg] translate-x-[15%] translate-y-[20%]" />
         
-        {/* Floating Decorative Orbs */}
         <div className="absolute top-[20%] left-[10%] w-20 h-20 rounded-full bg-bs-primary/40 backdrop-blur-xl
                      border border-white/20 animate-float-slow" />
         <div className="absolute bottom-[30%] right-[15%] w-16 h-16 rounded-full bg-bs-800/30 backdrop-blur-xl
@@ -73,10 +62,8 @@ export const CTASection: React.FC = () => {
         <div className="absolute top-[60%] left-[30%] w-12 h-12 rounded-full bg-white/20 backdrop-blur-xl
                      border border-white/30 animate-pulse-slow" />
         
-        {/* Content Container */}
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center mb-16">
-            {/* Glass Badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full 
                          bg-white/15 backdrop-blur-xl border border-white/20
                          text-white text-sm font-medium mb-8 shadow-lg
@@ -106,7 +93,6 @@ export const CTASection: React.FC = () => {
               günlük hayatta en sık kullanılan ve en önemli kelimeler belirlendi.
             </p>
             
-            {/* 3D Button - Glassmorphism Style */}
             <a 
               href="https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000"
               target="_blank"
@@ -126,7 +112,6 @@ export const CTASection: React.FC = () => {
             </a>
           </div>
 
-          {/* Stats Grid - Glassmorphism Cards */}
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {researchStats.map((stat, index) => (
               <div key={stat.title} 
@@ -137,15 +122,12 @@ export const CTASection: React.FC = () => {
                                index % 4 === 1 ? 'bg-white/15' : 
                                index % 4 === 2 ? 'bg-white/20' : 'bg-white/10'}`}>
                 
-                {/* Glass Card Content */}
                 <div className="relative z-10 p-8">
-                  {/* Glass Icon Container */}
                   <div className="relative w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm
                                flex items-center justify-center border border-white/20 mb-5
                                group-hover:scale-110 group-hover:rotate-[5deg] transition-all">
                     <stat.icon className="w-8 h-8 text-white" />
                     
-                    {/* Shiny Reflection on Icon */}
                     <div className="absolute inset-x-0 top-0 h-[40%] bg-gradient-to-b from-white/30 to-transparent
                                  rounded-t-xl opacity-50" />
                   </div>
@@ -157,11 +139,9 @@ export const CTASection: React.FC = () => {
                   
                   <p className="text-white/60 text-sm">{stat.detail}</p>
                   
-                  {/* Bottom highlight */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                 </div>
                 
-                {/* Background Glass Orb Effect */}
                 <div className={`absolute ${index % 2 === 0 ? '-right-6 -bottom-6' : '-left-6 -top-6'} 
                              w-24 h-24 rounded-full bg-white/5 backdrop-blur-sm border border-white/10
                              group-hover:bg-white/10 transition-all duration-500`} />
@@ -169,7 +149,6 @@ export const CTASection: React.FC = () => {
             ))}
           </div>
           
-          {/* Bottom Scrolling Indicator */}
           <div className="flex justify-center mt-16">
             <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center
                          animate-bounce cursor-pointer">
@@ -187,12 +166,9 @@ export const CTASection: React.FC = () => {
         </div>
       </section>
 
-      {/* Uygulama Özellikleri Bölümü */}
       <section className="relative overflow-hidden bg-white py-24 rounded-3xl">
-        {/* Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-bs-50/80 via-white to-bs-50/30" />
         
-        {/* Decorative Elements */}
         <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full 
                      bg-gradient-to-br from-bs-primary/5 to-bs-800/5 blur-3xl
                      animate-float-slow opacity-60 -translate-y-1/2 translate-x-1/2" />
@@ -201,7 +177,6 @@ export const CTASection: React.FC = () => {
                      animate-float-slow-reverse opacity-40 translate-y-1/2 -translate-x-1/2" />
 
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Header */}
           <div className="mx-auto max-w-2xl text-center mb-12">
             <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full 
                          bg-bs-primary/10 text-bs-primary text-sm font-medium backdrop-blur-sm">
@@ -220,10 +195,8 @@ export const CTASection: React.FC = () => {
             </p>
           </div>
 
-          {/* Bento Grid */}
           <div className="mx-auto mt-12 max-w-6xl">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Ana Özellik - Büyük Bento Kutusu */}
               <div className="md:col-span-2 md:row-span-2 group">
                 <div className="h-full rounded-3xl bg-gradient-to-br from-bs-primary/10 to-bs-primary/5 p-8 border border-bs-100 shadow-sm
                              hover:shadow-xl hover:border-bs-primary/30 transition-all duration-300 overflow-hidden relative">
@@ -278,96 +251,33 @@ export const CTASection: React.FC = () => {
                 </div>
               </div>
 
-              {/* İnteraktif Sınavlar */}
-              <div className="group">
-                <div className="h-full rounded-3xl bg-white p-6 border border-bs-100 shadow-sm
-                             hover:shadow-xl hover:border-bs-primary/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center
-                               group-hover:scale-110 transition-all mb-4">
-                    <Puzzle className="w-6 h-6 text-amber-500" />
-                  </div>
-                  
-                  <h3 className="text-xl font-semibold text-bs-navy mb-2">İnteraktif Sınavlar</h3>
-                  <p className="text-bs-navygri/80 text-sm">Farklı soru tipleriyle öğrenme durumunuzu test edin ve anında geribildirim alın.</p>
-                </div>
-              </div>
-
-              {/* Seviye Takibi */}
-              <div className="group">
-                <div className="h-full rounded-3xl bg-white p-6 border border-bs-100 shadow-sm
-                             hover:shadow-xl hover:border-bs-primary/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center
-                               group-hover:scale-110 transition-all mb-4">
-                    <Gauge className="w-6 h-6 text-green-500" />
-                  </div>
-                  
-                  <h3 className="text-xl font-semibold text-bs-navy mb-2">Seviye Takibi</h3>
-                  <p className="text-bs-navygri/80 text-sm">CEFR (A1-C1) seviyelerine göre ilerleyişinizi takip edin ve hedeflerinize göre plan yapın.</p>
-                </div>
-              </div>
-
-              {/* Telaffuz Desteği */}
-              <div className="group">
-                <div className="h-full rounded-3xl bg-white p-6 border border-bs-100 shadow-sm
-                             hover:shadow-xl hover:border-bs-primary/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center
-                               group-hover:scale-110 transition-all mb-4">
-                    <Headphones className="w-6 h-6 text-blue-500" />
-                  </div>
-                  
-                  <h3 className="text-xl font-semibold text-bs-navy mb-2">Telaffuz Desteği</h3>
-                  <p className="text-bs-navygri/80 text-sm">Her kelime için profesyonel telaffuz ve örnek cümlelerle doğru konuşmayı öğrenin.</p>
-                </div>
-              </div>
-
-              {/* İstatistikler */}
-              <div className="md:col-span-2 group bg-gradient-to-br from-bs-navy/5 to-bs-navy/2">
-                <div className="h-full rounded-3xl p-6 border border-bs-100 shadow-sm relative overflow-hidden
-                             hover:shadow-xl hover:border-bs-primary/30 transition-all duration-300">
-                  <div className="absolute -right-10 bottom-0 w-40 h-40 bg-bs-navy/5 rounded-full blur-2xl"></div>
-                  
-                  <div className="flex flex-col md:flex-row gap-6 items-center h-full">
-                    <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center
-                                 group-hover:scale-110 transition-all">
-                      <LineChart className="w-7 h-7 text-indigo-500" />
+              <div className="grid grid-cols-1 gap-5">
+                <div className="group">
+                  <div className="h-full rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 p-6 border border-amber-200/50
+                               hover:shadow-lg hover:border-amber-300/50 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-amber-100/80 flex items-center justify-center mb-4">
+                      <Trophy className="w-6 h-6 text-amber-500" />
                     </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-bs-navy mb-2">Detaylı Analiz Paneli</h3>
-                      <p className="text-bs-navygri/80">Öğrenme performansınızı görsel grafiklerle takip edin ve güçlü/zayıf yönlerinizi keşfedin.</p>
+                    <h3 className="text-xl font-semibold text-bs-navy mb-2">İnteraktif Sınavlar</h3>
+                    <p className="text-bs-navygri/80">
+                      Farklı soru tipleriyle öğrenme durumunuzu test edin ve anında geribildirim alın.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <div className="h-full rounded-2xl bg-gradient-to-br from-green-50 to-green-100/50 p-6 border border-green-200/50
+                               hover:shadow-lg hover:border-green-300/50 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-green-100/80 flex items-center justify-center mb-4">
+                      <Target className="w-6 h-6 text-green-500" />
                     </div>
-                    
-                    <div className="shrink-0 hidden md:block">
-                      <div className="bg-white rounded-2xl px-3 py-2 shadow-sm">
-                        <div className="flex items-center gap-2 text-sm text-bs-navy font-medium mb-1">
-                          <Trophy className="w-4 h-4 text-amber-500" />
-                          <span>Haftalık İlerleme</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-3 bg-bs-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-bs-primary to-bs-800 w-3/4"></div>
-                          </div>
-                          <span className="text-sm font-semibold text-bs-navy">75%</span>
-                        </div>
-                      </div>
-                    </div>
+                    <h3 className="text-xl font-semibold text-bs-navy mb-2">Seviye Takibi</h3>
+                    <p className="text-bs-navygri/80">
+                      CEFR (A1-C1) seviyelerine göre ilerleyişinizi takip edin ve hedeflerinize göre plan yapın.
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Mobile Native Style CTA Button */}
-            <div className="mt-10 flex justify-center">
-              <button className="group relative inline-flex items-center justify-center px-10 py-4 overflow-hidden
-                              rounded-full bg-gradient-to-r from-bs-primary to-bs-800 text-white font-medium
-                              shadow-lg shadow-bs-primary/20 hover:shadow-xl transition-all">
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/30 to-white/0
-                             translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="relative flex items-center gap-2">
-                  <Rocket className="w-5 h-5" />
-                  <span>Şimdi Başla</span>
-                </span>
-              </button>
             </div>
           </div>
         </div>
