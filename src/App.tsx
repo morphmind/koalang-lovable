@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Header } from './components';
 import { HeroSection } from './components/HeroSection';
@@ -11,10 +11,8 @@ import { useWords } from './modules/words/context/WordContext';
 import { AuthPopup } from './modules/auth/components/AuthPopup';
 import { useAuthPopup } from './modules/auth/hooks/useAuthPopup';
 import { Footer } from './components/Footer';
-import { LegalPopupProvider } from './context/LegalPopupContext';
 import { Toaster } from 'react-hot-toast';
 import { VideoCallModal } from './modules/video-call/components/VideoCallModal';
-import { VideoCallProvider } from './modules/video-call/context/VideoCallContext';
 
 // Import all word data from correct path
 import { 
@@ -46,13 +44,14 @@ import {
   oxford3000z
 } from './data/oxford3000';
 
-function App() {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [activeLevel, setActiveLevel] = React.useState('all');
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [showLearned, setShowLearned] = React.useState(false);
-  const [showQuiz, setShowQuiz] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+// Ana sayfa bileşeni
+const HomePage = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeLevel, setActiveLevel] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showLearned, setShowLearned] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { 
     learnedWords,
@@ -61,8 +60,6 @@ function App() {
     toggleWordLearned,
     getLearnedWordsCount
   } = useWords();
-
-  const { isOpen, closeAuthPopup } = useAuthPopup();
 
   const wordsPerPage = 12;
   const words: Word[] = [
@@ -136,140 +133,169 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <LegalPopupProvider>
-        <VideoCallProvider>
-          <Toaster position="bottom-right" />
-          <Helmet>
-            <title>Oxford 3000™ Kelime - koalang ile İngilizce Öğren</title>
-            <meta name="description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi ve interaktif alıştırmalarla etkili İngilizce öğrenin." />
-            <meta name="keywords" content="oxford 3000, ingilizce kelime, ingilizce öğrenme, kelime ezberleme, ingilizce kelime listesi" />
-            
-            {/* Open Graph / Facebook */}
-            <meta property="og:type" content="website" />
-            <meta property="og:url" content="https://koalang.io/" />
-            <meta property="og:title" content="Oxford 3000™ Kelime - koalang ile İngilizce Öğren" />
-            <meta property="og:description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi." />
-            <meta property="og:image" content="https://koalang.io/images/oxford-3000-og.jpg" />
+    <>
+      <Helmet>
+        <title>Oxford 3000™ Kelime - koalang ile İngilizce Öğren</title>
+        <meta name="description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi ve interaktif alıştırmalarla etkili İngilizce öğrenin." />
+        <meta name="keywords" content="oxford 3000, ingilizce kelime, ingilizce öğrenme, kelime ezberleme, ingilizce kelime listesi" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://koalang.io/" />
+        <meta property="og:title" content="Oxford 3000™ Kelime - koalang ile İngilizce Öğren" />
+        <meta property="og:description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi." />
+        <meta property="og:image" content="https://koalang.io/images/oxford-3000-og.jpg" />
 
-            {/* Twitter */}
-            <meta property="twitter:card" content="summary_large_image" />
-            <meta property="twitter:url" content="https://koalang.io/oxford-3000" />
-            <meta property="twitter:title" content="Oxford 3000™ Kelime - koalang ile İngilizce Öğren" />
-            <meta property="twitter:description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi." />
-            <meta property="twitter:image" content="https://koalang.io/images/oxford-3000-og.jpg" />
-            
-            {/* Ek Meta Etiketleri */}
-            <meta name="author" content="koalang" />
-            <meta name="robots" content="index, follow" />
-            <meta name="googlebot" content="index, follow" />
-            <meta name="google" content="notranslate" />
-            <meta name="format-detection" content="telephone=no" />
-            <meta name="theme-color" content="#081C9E" />
-            <meta name="apple-mobile-web-app-capable" content="yes" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-            
-            {/* Canonical URL */}
-            <link rel="canonical" href="https://koalang.io/oxford-3000" />
-            
-            {/* Alternatif Diller */}
-            <link rel="alternate" hrefLang="tr" href="https://koalang.io/oxford-3000" />
-            <link rel="alternate" hrefLang="en" href="https://koalang.io/en/oxford-3000" />
-            <link rel="alternate" hrefLang="tr" href="https://koalang.xyz/oxford-3000" />
-            <link rel="alternate" hrefLang="en" href="https://koalang.xyz/en/oxford-3000" />
-            
-            {/* Favicon ve App Icons */}
-            <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-            <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-            <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-            <link rel="manifest" href="/site.webmanifest" />
-            
-            {/* Structured Data / JSON-LD */}
-            <script type="application/ld+json">
-              {`
-                {
-                  "@context": "https://schema.org",
-                  "@type": "WebApplication",
-                  "name": "Oxford 3000™ Kelime",
-                  "description": "koalang ile Oxford 3000™ kelime listesi üzerinden İngilizce kelime haznenizi geliştirin.",
-                  "url": "https://koalang.io/oxford-3000",
-                  "applicationCategory": "EducationalApplication",
-                  "operatingSystem": "Web",
-                  "offers": {
-                    "@type": "Offer",
-                    "price": "0",
-                    "priceCurrency": "TRY"
-                  },
-                  "author": {
-                    "@type": "Organization",
-                    "name": "koalang",
-                    "url": "https://koalang.io"
-                  }
-                }
-              `}
-            </script>
-          </Helmet>
-          <Header 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            showLearned={showLearned}
-            setShowLearned={setShowLearned}
-            setShowQuiz={setShowQuiz}
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://koalang.io/oxford-3000" />
+        <meta property="twitter:title" content="Oxford 3000™ Kelime - koalang ile İngilizce Öğren" />
+        <meta property="twitter:description" content="Oxford 3000™ kelime listesi ile İngilizce kelime haznenizi geliştirin. Yapay zeka destekli kişiselleştirilmiş öğrenme deneyimi." />
+        <meta property="twitter:image" content="https://koalang.io/images/oxford-3000-og.jpg" />
+        
+        {/* Ek Meta Etiketleri */}
+        <meta name="author" content="koalang" />
+        <meta name="robots" content="index, follow" />
+        <meta name="googlebot" content="index, follow" />
+        <meta name="google" content="notranslate" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="theme-color" content="#081C9E" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://koalang.io/oxford-3000" />
+        
+        {/* Alternatif Diller */}
+        <link rel="alternate" hrefLang="tr" href="https://koalang.io/oxford-3000" />
+        <link rel="alternate" hrefLang="en" href="https://koalang.io/en/oxford-3000" />
+        <link rel="alternate" hrefLang="tr" href="https://koalang.xyz/oxford-3000" />
+        <link rel="alternate" hrefLang="en" href="https://koalang.xyz/en/oxford-3000" />
+        
+        {/* Favicon ve App Icons */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        
+        {/* Structured Data / JSON-LD */}
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "Oxford 3000™ Kelime",
+              "description": "koalang ile Oxford 3000™ kelime listesi üzerinden İngilizce kelime haznenizi geliştirin.",
+              "url": "https://koalang.io/oxford-3000",
+              "applicationCategory": "EducationalApplication",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "TRY"
+              },
+              "author": {
+                "@type": "Organization",
+                "name": "koalang",
+                "url": "https://koalang.io"
+              }
+            }
+          `}
+        </script>
+      </Helmet>
+      <Header 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showLearned={showLearned}
+        setShowLearned={setShowLearned}
+        setShowQuiz={setShowQuiz}
+      />
+      {isLoading && <LoadingOverlay message="İşleminiz gerçekleştiriliyor..." />}
+      {(error || wordsError) && (
+        <ErrorAlert
+          message={error || wordsError || 'Bir hata oluştu'}
+          onClose={() => setError(null)}
+          action={{
+            label: "Tekrar Dene",
+            onClick: () => setError(null)
+          }}
+        />
+      )}
+      <main>
+        {showQuiz ? (
+          <QuizPage
+            learnedWordsCount={learnedWordsCount}
+            words={words}
+            learnedWords={learnedWords}
+            onClose={() => setShowQuiz(false)}
           />
-          {isLoading && <LoadingOverlay message="İşleminiz gerçekleştiriliyor..." />}
-          {(error || wordsError) && (
-            <ErrorAlert
-              message={error || wordsError || 'Bir hata oluştu'}
-              onClose={() => setError(null)}
-              action={{
-                label: "Tekrar Dene",
-                onClick: () => setError(null)
-              }}
+        ) : (
+          <div className="oxford-container">
+            <HeroSection
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              showLearned={showLearned}
+              setShowLearned={setShowLearned}
+              setShowQuiz={setShowQuiz}
+              learnedWordsCount={learnedWordsCount}
+              totalWords={totalWords}
+              learningProgress={learningProgress}
             />
-          )}
-          <main>
-            {showQuiz ? (
-              <QuizPage
-                learnedWordsCount={learnedWordsCount}
-                words={words}
-                learnedWords={learnedWords}
-                onClose={() => setShowQuiz(false)}
-              />
-            ) : (
-              <div className="oxford-container">
-                <HeroSection
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  showLearned={showLearned}
-                  setShowLearned={setShowLearned}
-                  setShowQuiz={setShowQuiz}
-                  learnedWordsCount={learnedWordsCount}
-                  totalWords={totalWords}
-                  learningProgress={learningProgress}
-                />
-                <ContentSection
-                  words={words}
-                  activeLevel={activeLevel}
-                  setActiveLevel={setActiveLevel}
-                  displayedWords={displayedWords}
-                  showLearned={showLearned}
-                  setShowLearned={setShowLearned}
-                  learnedWords={learnedWords}
-                  toggleLearned={toggleWordLearned}
-                  speak={speak}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  handlePageChange={handlePageChange}
-                />
-                <CTASection />
-              </div>
-            )}
-          </main>
-          <Footer />
-          <AuthPopup isOpen={isOpen} onClose={closeAuthPopup} />
-          <VideoCallModal />
-        </VideoCallProvider>
-      </LegalPopupProvider>
+            <ContentSection
+              words={words}
+              activeLevel={activeLevel}
+              setActiveLevel={setActiveLevel}
+              displayedWords={displayedWords}
+              showLearned={showLearned}
+              setShowLearned={setShowLearned}
+              learnedWords={learnedWords}
+              toggleLearned={toggleWordLearned}
+              speak={speak}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
+            />
+            <CTASection />
+          </div>
+        )}
+      </main>
+      <Footer />
+    </>
+  );
+};
+
+// Ana App bileşeni - Artık daha basit ve sadece routing yapıyor
+function App() {
+  const { isOpen, closeAuthPopup } = useAuthPopup();
+  
+  useEffect(() => {
+    const handleKoalyButtonClick = () => {
+      console.log("[App] koaly-button-clicked olayı alındı");
+      
+      // VideoCallModal'ı manuel olarak göstermeye çalış
+      const modal = document.querySelector('[data-videocall-modal="true"]');
+      if (modal) {
+        (modal as HTMLElement).style.display = 'block';
+        (modal as HTMLElement).classList.remove('hidden');
+        console.log("[App] Modal görünür yapıldı");
+      }
+    };
+    
+    window.addEventListener('koaly-button-clicked', handleKoalyButtonClick);
+    
+    return () => {
+      window.removeEventListener('koaly-button-clicked', handleKoalyButtonClick);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Toaster position="bottom-right" />
+      
+      <HomePage />
+      
+      <AuthPopup isOpen={isOpen} onClose={closeAuthPopup} />
+      <VideoCallModal />
     </div>
   );
 }

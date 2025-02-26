@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth';
@@ -7,10 +6,10 @@ import { DashboardSidebar } from './DashboardSidebar';
 import { DashboardHeader } from './DashboardHeader';
 import { VideoCallProvider } from '../../video-call/context/VideoCallContext';
 import { VideoCallModal } from '../../video-call/components/VideoCallModal';
-import { useVideoCall } from '../../video-call/context/VideoCallContext';
 import { MessageSquare, HeadphonesIcon } from 'lucide-react';
 import { LoadingOverlay } from '../../../components';
 import { useToast } from '@/components/ui/use-toast';
+import { MobileFooterMenu } from './MobileFooterMenu';
 
 const PracticeButton: React.FC = () => {
   const { startCall } = useVideoCall();
@@ -69,9 +68,9 @@ const PracticeButton: React.FC = () => {
 };
 
 export const DashboardLayout: React.FC = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const location = useLocation();
-  const isMainDashboard = location.pathname === '/dashboard' || location.pathname === '/dashboard/';
+  const isMainDashboard = location.pathname === '/dashboard';
   const [initializingApp, setInitializingApp] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showLearned, setShowLearned] = useState(false);
@@ -112,15 +111,15 @@ export const DashboardLayout: React.FC = () => {
           setShowLearned={setShowLearned}
         />
         
-        <main className="container mx-auto px-4 lg:px-8 pb-24">
+        <main className="container mx-auto px-4 lg:px-8 pb-24 lg:pb-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative mt-24">
-            <div className="lg:col-span-3">
+            <div className="hidden lg:block lg:col-span-3">
               <div className="sticky top-24">
                 <DashboardSidebar />
               </div>
             </div>
 
-            <div className="lg:col-span-9">
+            <div className="col-span-1 lg:col-span-9">
               {isMainDashboard && (
                 <DashboardHeader 
                   user={user}
@@ -133,9 +132,12 @@ export const DashboardLayout: React.FC = () => {
               <Outlet />
             </div>
           </div>
+          
+          <div className="h-12 lg:hidden"></div>
         </main>
         
-        <PracticeButton />
+        <MobileFooterMenu />
+        <VideoCallModal />
       </div>
     </VideoCallProvider>
   );

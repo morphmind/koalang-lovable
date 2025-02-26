@@ -192,6 +192,15 @@ export const LearnedWordsPage: React.FC = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  // Dashboard ana sayfasında görünmesini istemiyorsanız
+  // URL'ye bakarak sadece doğru sayfada göster
+  const isLearnedWordsRoute = window.location.pathname.includes('/learned-words');
+  
+  // Eğer ana sayfadaysak, hiçbir şey render etme
+  if (!isLearnedWordsRoute) {
+    return null;
+  }
+
   if (isLoading || isLoadingDates) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">

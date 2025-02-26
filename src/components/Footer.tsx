@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../modules/auth/context/AuthContext';
+import { useVideoCall } from '../modules/video-call/context/VideoCallContext';
 import { 
   BookOpen, 
   Twitter, 
   Instagram,
   BookText as TikTok,
   Mail,
-  Heart,
   ArrowUpRight,
   BookMarked,
   Target,
@@ -17,14 +18,31 @@ import {
   FileText,
   MessageCircle,
   Layers,
-  Globe2,
   Sparkles,
   Zap
 } from 'lucide-react';
 import { useLegalPopup } from '../context/LegalPopupContext';
+import { useAuthPopup } from '../modules/auth/hooks/useAuthPopup';
 
 export const Footer: React.FC = () => {
   const { openPopup } = useLegalPopup();
+  const { openAuthPopup } = useAuthPopup();
+  const { user } = useAuth();
+  const { startCall } = useVideoCall();
+  
+  // Kullanıcı durumuna göre Koaly butonuna tıklama işlemi
+  const handleKoalyClick = () => {
+    if (user) {
+      // Kullanıcı giriş yapmışsa, Koaly ile görüşme başlat
+      startCall();
+      console.log("Koaly ile görüşme başlatılıyor...");
+    } else {
+      // Kullanıcı giriş yapmamışsa, üye ol ekranını göster
+      openAuthPopup();
+      console.log("Üyelik ekranı açılıyor...");
+    }
+  };
+  
   const menuItems = [
     {
       title: 'Ürünler',
@@ -32,7 +50,12 @@ export const Footer: React.FC = () => {
         { icon: BookOpen, label: 'Oxford 3000™', href: '/oxford-3000' },
         { icon: BookMarked, label: 'Oxford 5000™', href: '/oxford-5000' },
         { icon: Target, label: 'Pratik Yap', href: '/practice' },
-        { icon: Brain, label: 'Yapay Zeka Asistan', href: '/ai-tutor', soon: true },
+        { 
+          icon: Brain, 
+          label: 'Koaly: Yapay Zeka Asistanınız', 
+          onClick: handleKoalyClick, // Akıllı işleyici fonksiyon
+          badge: 'Yeni'
+        },
         { icon: GraduationCap, label: 'Özel Ders', href: '/tutoring', soon: true }
       ]
     },
@@ -137,21 +160,18 @@ export const Footer: React.FC = () => {
           {/* Sosyal Medya */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {socialLinks.map((social) => (
-              <Link 
+              <a 
                 key={social.name}
                 href={social.href}
-                target="_blank"
+                target="_blank" 
                 rel="noopener noreferrer"
                 className={`w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur 
-                         flex items-center justify-center text-white/70 hover:text-white
-                         transition-all duration-500 hover:-translate-y-2 hover:shadow-xl
-                         group relative overflow-hidden ${social.color} z-20`}
+                         flex items-center justify-center text-white transition-all duration-300
+                         ${social.color}`}
                 title={social.name}
               >
-                <social.icon className="w-5 h-5 relative z-10 transition-transform duration-500 
-                                   group-hover:scale-110 group-hover:rotate-12" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </Link>
+                <social.icon className="w-5 h-5" />
+              </a>
             ))}
           </div>
         </div>
@@ -171,32 +191,67 @@ export const Footer: React.FC = () => {
               {/* Links Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {section.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className="group flex items-center gap-3 p-4 rounded-xl bg-white/5 backdrop-blur
-                             hover:bg-white/10 transition-all duration-500 relative overflow-hidden
-                             z-10"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center
-                                group-hover:bg-white group-hover:text-bs-primary 
-                                group-hover:rotate-12 group-hover:scale-110 transition-all duration-500">
-                      <item.icon className="w-5 h-5 text-white group-hover:text-bs-primary" />
-                    </div>
-                    <span className="text-white/80 group-hover:text-white transition-colors">
-                      {item.label}
-                    </span>
-                    {item.soon ? (
-                      <span className="absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 
-                                   rounded-full bg-white/10 text-white/90">
-                        Yakında
+                  item.onClick ? (
+                    <button
+                      key={item.label}
+                      onClick={item.onClick}
+                      className="group flex items-center gap-3 p-4 rounded-xl bg-white/5 backdrop-blur
+                               hover:bg-white/10 transition-all duration-500 relative overflow-hidden
+                               z-10 text-left w-full"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center
+                                  group-hover:bg-white group-hover:text-bs-primary 
+                                  group-hover:rotate-12 group-hover:scale-110 transition-all duration-500">
+                        <item.icon className="w-5 h-5 text-white group-hover:text-bs-primary" />
+                      </div>
+                      <span className="text-white/80 group-hover:text-white transition-colors">
+                        {item.label}
                       </span>
-                    ) : (
-                      <ArrowUpRight className="w-4 h-4 text-white/40 absolute top-4 right-4 
-                                           opacity-0 -translate-x-4 group-hover:opacity-100 
-                                           group-hover:translate-x-0 transition-all duration-500" />
-                    )}
-                  </Link>
+                      {item.badge ? (
+                        <span className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 
+                                     rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-white
+                                     animate-pulse">
+                          {item.badge}
+                        </span>
+                      ) : item.soon ? (
+                        <span className="absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 
+                                     rounded-full bg-white/10 text-white/90">
+                          Yakında
+                        </span>
+                      ) : (
+                        <ArrowUpRight className="w-4 h-4 text-white/40 absolute top-4 right-4 
+                                             opacity-0 -translate-x-4 group-hover:opacity-100 
+                                             group-hover:translate-x-0 transition-all duration-500" />
+                      )}
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className="group flex items-center gap-3 p-4 rounded-xl bg-white/5 backdrop-blur
+                               hover:bg-white/10 transition-all duration-500 relative overflow-hidden
+                               z-10"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center
+                                  group-hover:bg-white group-hover:text-bs-primary 
+                                  group-hover:rotate-12 group-hover:scale-110 transition-all duration-500">
+                        <item.icon className="w-5 h-5 text-white group-hover:text-bs-primary" />
+                      </div>
+                      <span className="text-white/80 group-hover:text-white transition-colors">
+                        {item.label}
+                      </span>
+                      {item.soon ? (
+                        <span className="absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 
+                                     rounded-full bg-white/10 text-white/90">
+                          Yakında
+                        </span>
+                      ) : (
+                        <ArrowUpRight className="w-4 h-4 text-white/40 absolute top-4 right-4 
+                                             opacity-0 -translate-x-4 group-hover:opacity-100 
+                                             group-hover:translate-x-0 transition-all duration-500" />
+                      )}
+                    </Link>
+                  )
                 ))}
               </div>
             </div>

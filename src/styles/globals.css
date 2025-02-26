@@ -1,0 +1,111 @@
+/* Ek animasyon stilleri */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes float-slow {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes float-slow-reverse {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(20px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 8s ease-in-out infinite;
+}
+
+/* Neumorphism karları için gerekli stiller */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.word-card {
+  height: 280px;
+  transform-style: preserve-3d;
+}
+
+@keyframes bounce-sm {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce-sm {
+  animation: bounce-sm 0.5s ease infinite;
+}
+
+/* Karanlık mod CSS değişkenleri */
+:root {
+  --neuro-light-shadow: rgba(255, 255, 255, 0.8);
+  --neuro-dark-shadow: rgba(0, 0, 0, 0.07);
+  --neuro-bg: #ffffff;
+}
+
+.dark {
+  --neuro-light-shadow: rgba(30, 30, 30, 0.2);
+  --neuro-dark-shadow: rgba(0, 0, 0, 0.2);
+  --neuro-bg: #1f2937;
+}
+
+/* Neumorphism karların temel stili */
+.neuro-card {
+  background: var(--neuro-bg);
+  box-shadow: 8px 8px 16px var(--neuro-dark-shadow),
+             -8px -8px 16px var(--neuro-light-shadow);
+  border-radius: 1rem;
+}
+
+/* Neumorphism butonların temel stili */
+.neuro-button {
+  background: var(--neuro-bg);
+  box-shadow: 3px 3px 6px var(--neuro-dark-shadow),
+             -3px -3px 6px var(--neuro-light-shadow);
+  transition: all 0.2s ease;
+}
+
+.neuro-button:active {
+  box-shadow: inset 2px 2px 5px var(--neuro-dark-shadow),
+              inset -2px -2px 5px var(--neuro-light-shadow);
+} 

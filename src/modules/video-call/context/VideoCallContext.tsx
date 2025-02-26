@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 
 type KoalyState = 'idle' | 'talking' | 'listening' | 'happy' | 'thinking';
 type CallState = 'idle' | 'incoming' | 'connected' | 'ended';
@@ -73,10 +72,12 @@ interface VideoCallContextType extends VideoCallState {
 
 const VideoCallContext = createContext<VideoCallContextType | undefined>(undefined);
 
-export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const VideoCallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(videoCallReducer, initialState);
 
   const startCall = useCallback(() => {
+    console.log("[VideoCallContext] startCall çağrıldı");
+    
     dispatch({ type: 'OPEN_CALL' });
   }, []);
 
@@ -107,6 +108,22 @@ export const VideoCallProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const addToConversation = useCallback((message: string) => {
     dispatch({ type: 'ADD_TO_CONVERSATION', payload: message });
   }, []);
+
+  // Global event listener ekleyelim
+  useEffect(() => {
+    const handleGlobalStartCall = () => {
+      console.log("[VideoCallContext] Global startCall olayı alındı");
+      if (state.callState === 'idle') {
+        startCall();
+      }
+    };
+    
+    window.addEventListener('global-start-call', handleGlobalStartCall);
+    
+    return () => {
+      window.removeEventListener('global-start-call', handleGlobalStartCall);
+    };
+  }, [state.callState, startCall]); // startCall dependency olarak eklenmeyecek, çünkü bu sonsuz döngü oluşturabilir
 
   const value = {
     ...state,

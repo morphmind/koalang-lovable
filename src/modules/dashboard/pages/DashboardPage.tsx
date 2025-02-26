@@ -1,33 +1,16 @@
 import React from 'react';
-import { DashboardOverview } from '../components/DashboardOverview';
 import { LearningProgress } from '../components/LearningProgress';
 import { RecentActivity } from '../components/RecentActivity';
-import { SuggestedWords } from '../components/SuggestedWords';
 import { LoadingSpinner } from '../../auth/components/LoadingSpinner';
 import { ErrorMessage } from '../../auth/components/ErrorMessage';
 import { useDashboard } from '../context/DashboardContext';
-import { useWords } from '../../words/context/WordContext';
 import { useProgress } from '../hooks/useProgress';
-import { Word } from '../../../data/oxford3000.types';
 import { useAuth } from '../../auth';
-import { supabase } from '../../../lib/supabase';
-import { TypedSupabaseClient } from '../../notifications/types';
-import { NotificationInsert } from '../../notifications/types';
-
-interface Activity {
-  id: number;
-  type: 'learning' | 'quiz';
-  title: string;
-  description: string;
-  result: 'success' | 'failure';
-  timestamp: Date;
-}
-
-const client = supabase as TypedSupabaseClient;
+import { Activity } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { stats, isLoading, error } = useDashboard();
+  const { isLoading, error } = useDashboard();
   const { 
     getWeeklyProgress,
     getLevelDistribution,
@@ -35,13 +18,6 @@ export const DashboardPage: React.FC = () => {
     isLoading: loadingProgress,
     error: progressError
   } = useProgress();
-  const {
-    getSuggestedWords,
-    toggleWordLearned,
-    isLoading: loadingWords,
-    error: suggestedError
-  } = useWords();
-  const [suggestedWords, setSuggestedWords] = React.useState<Word[]>([]);
   const [weeklyProgress, setWeeklyProgress] = React.useState<number[]>([]);
   const [levelDistribution, setLevelDistribution] = React.useState<{[key: string]: number}>({});
   const [recentActivities, setRecentActivities] = React.useState<Activity[]>([]);
@@ -75,46 +51,7 @@ export const DashboardPage: React.FC = () => {
     loadProgressData();
   }, [user, getWeeklyProgress, getLevelDistribution, getRecentActivities]);
 
-  // Önerilen kelimeleri yükle
-  React.useEffect(() => {
-    if (!user) return;
 
-    const loadSuggestedWords = async () => {
-      try {
-        const suggested = await getSuggestedWords(6);
-        setSuggestedWords(suggested);
-      } catch (err) {
-        console.error('Önerilen kelimeler yüklenirken hata:', err);
-      }
-    };
-
-    loadSuggestedWords();
-  }, [user, stats.learnedWords, getSuggestedWords]);
-
-  const handleLearnWord = async (word: Word) => {
-    if (!user) return;
-
-    try {
-      console.log('Kelime öğrenme başladı:', word.word);
-
-      // Kelimeyi öğrenildi olarak işaretle
-      await toggleWordLearned(word.word);
-      console.log('Kelime durumu güncellendi');
-
-      // Önerilen kelimeleri güncelle
-      const suggested = await getSuggestedWords(6);
-      setSuggestedWords(suggested);
-      console.log('Önerilen kelimeler güncellendi');
-    } catch (err) {
-      console.error('Kelime öğrenildi olarak işaretlenirken hata:', err);
-    }
-  };
-
-  const handleSpeak = (text: string) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.speak(utterance);
-  };
 
   if (!user) {
     return (
@@ -142,35 +79,19 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Genel Bakış */}
-      <DashboardOverview stats={stats} />
-
-      {/* İlerleme, Aktiviteler ve Önerilen Kelimeler */}
-      <div className="space-y-8">
-        {/* Önerilen Kelimeler - Yatay Kart */}
-        <SuggestedWords
-          words={suggestedWords}
-          isLoading={loadingWords}
-          error={suggestedError}
-          onLearn={handleLearnWord} 
-          onSpeak={handleSpeak}
-          limit={6}
+      {/* İlerleme ve Aktiviteler - Yan Yana */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <LearningProgress 
+          weeklyProgress={weeklyProgress}
+          levelDistribution={levelDistribution}
+          isLoading={loadingProgress}
+          error={progressError}
         />
-
-        {/* İlerleme ve Aktiviteler - Yan Yana */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <LearningProgress 
-            weeklyProgress={weeklyProgress}
-            levelDistribution={levelDistribution}
-            isLoading={loadingProgress}
-            error={progressError}
-          />
-          <RecentActivity 
-            activities={recentActivities} 
-            isLoading={loadingProgress}
-            error={progressError}
-          />
-        </div>
+        <RecentActivity 
+          activities={recentActivities} 
+          isLoading={loadingProgress}
+          error={progressError}
+        />
       </div>
     </div>
   );

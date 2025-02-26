@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProtectedRoute, PublicRoute } from '../modules/auth/components';
 import { AuthLayout } from '../modules/auth/components/AuthLayout';
 import { DashboardLayout } from '../modules/dashboard/components/DashboardLayout';
@@ -31,6 +31,10 @@ import WordFormPage from '../modules/admin/pages/WordFormPage';
 import QuizzesPage from '../modules/admin/pages/QuizzesPage';
 import QuizFormPage from '../modules/admin/pages/QuizFormPage';
 import SettingsPage from '../modules/admin/pages/SettingsPage';
+import { AboutPage } from '../pages/AboutPage';
+import { ContactPage } from '../pages/ContactPage';
+import { LegalPopupProvider } from '../context/LegalPopupContext';
+import { VideoCallProvider } from '../modules/video-call/context/VideoCallContext';
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -69,92 +73,98 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export const AppRoutes: React.FC = () => {
   return (
-    <Routes>
-      <Route path="/" element={<App />} />
-      
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AuthProvider><AdminLayout /></AuthProvider>}>
-        <Route path="login" element={<AdminLoginWrapper />} />
-        <Route path="dashboard" element={
-          <AdminRoute>
-            <DashboardPage />
-          </AdminRoute>
-        } />
-        <Route path="users" element={
-          <AdminRoute>
-            <UsersPage />
-          </AdminRoute>
-        } />
-        <Route path="users/:id" element={
-          <AdminRoute>
-            <UserDetailPage />
-          </AdminRoute>
-        } />
-        <Route path="words" element={
-          <AdminRoute>
-            <WordsPage />
-          </AdminRoute>
-        } />
-        <Route path="words/:id" element={
-          <AdminRoute>
-            <WordFormPage />
-          </AdminRoute>
-        } />
-        <Route path="quizzes" element={
-          <AdminRoute>
-            <QuizzesPage />
-          </AdminRoute>
-        } />
-        <Route path="quizzes/:id" element={
-          <AdminRoute>
-            <QuizFormPage />
-          </AdminRoute>
-        } />
-        <Route path="settings" element={
-          <AdminRoute>
-            <SettingsPage />
-          </AdminRoute>
-        } />
-      </Route>
+    <LegalPopupProvider>
+      <VideoCallProvider>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AuthProvider><AdminLayout /></AuthProvider>}>
+            <Route path="login" element={<AdminLoginWrapper />} />
+            <Route path="dashboard" element={
+              <AdminRoute>
+                <DashboardPage />
+              </AdminRoute>
+            } />
+            <Route path="users" element={
+              <AdminRoute>
+                <UsersPage />
+              </AdminRoute>
+            } />
+            <Route path="users/:id" element={
+              <AdminRoute>
+                <UserDetailPage />
+              </AdminRoute>
+            } />
+            <Route path="words" element={
+              <AdminRoute>
+                <WordsPage />
+              </AdminRoute>
+            } />
+            <Route path="words/:id" element={
+              <AdminRoute>
+                <WordFormPage />
+              </AdminRoute>
+            } />
+            <Route path="quizzes" element={
+              <AdminRoute>
+                <QuizzesPage />
+              </AdminRoute>
+            } />
+            <Route path="quizzes/:id" element={
+              <AdminRoute>
+                <QuizFormPage />
+              </AdminRoute>
+            } />
+            <Route path="settings" element={
+              <AdminRoute>
+                <SettingsPage />
+              </AdminRoute>
+            } />
+          </Route>
 
-      {/* Auth Routes */}
-      <Route path="/auth" element={<AuthLayout />}>
-        <Route path="login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-        <Route path="forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-        <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
-      </Route>
+          {/* Auth Routes */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route path="login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+            <Route path="forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+            <Route path="reset-password" element={<PublicRoute><NewPasswordPage /></PublicRoute>} />
+          </Route>
 
-      {/* Dashboard Routes */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<LearnedWordsPage />} />
-        <Route path="learned-words" element={<LearnedWordsPage />} />
-        <Route path="achievements" element={<AchievementsPage />} />
-        <Route path="progress" element={<ProgressPage />} />
+          {/* Dashboard Routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<LearnedWordsPage />} />
+            <Route path="learned-words" element={<LearnedWordsPage />} />
+            <Route path="achievements" element={<AchievementsPage />} />
+            <Route path="progress" element={<ProgressPage />} />
 
-        {/* Settings Routes */}
-        <Route path="settings" element={<SettingsLayout />}>
-          <Route index element={<Navigate to="profile" />} />
-          <Route path="profile" element={<SettingsProfilePage />} />
-          <Route path="email" element={<SettingsEmailPage />} />
-          <Route path="phone" element={<SettingsPhonePage />} />
-          <Route path="password" element={<SettingsPasswordPage />} />
-          <Route path="notifications" element={<SettingsNotificationsPage />} />
-          <Route path="appearance" element={<SettingsAppearancePage />} />
-          <Route path="privacy" element={<SettingsPrivacyPage />} />
-          <Route path="security" element={<SettingsSecurityPage />} />
-        </Route>
-      </Route>
+            {/* Settings Routes */}
+            <Route path="settings" element={<SettingsLayout />}>
+              <Route index element={<Navigate to="profile" />} />
+              <Route path="profile" element={<SettingsProfilePage />} />
+              <Route path="email" element={<SettingsEmailPage />} />
+              <Route path="phone" element={<SettingsPhonePage />} />
+              <Route path="password" element={<SettingsPasswordPage />} />
+              <Route path="notifications" element={<SettingsNotificationsPage />} />
+              <Route path="appearance" element={<SettingsAppearancePage />} />
+              <Route path="privacy" element={<SettingsPrivacyPage />} />
+              <Route path="security" element={<SettingsSecurityPage />} />
+            </Route>
+          </Route>
 
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </VideoCallProvider>
+    </LegalPopupProvider>
   );
 };
