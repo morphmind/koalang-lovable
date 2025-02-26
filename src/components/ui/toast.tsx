@@ -1,5 +1,4 @@
 
-// This implementation uses shadcn/ui toast component
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -98,7 +97,7 @@ ToastDescription.displayName = ToastPrimitives.Description.displayName
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
-type ToastActionElement = React.ReactElement<typeof ToastAction>
+type ToastActionElement = React.ReactElement<typeof ToastPrimitives.Action>
 
 export {
   type ToastProps,
@@ -110,3 +109,4 @@ export {
   ToastDescription,
   ToastClose,
 }
+

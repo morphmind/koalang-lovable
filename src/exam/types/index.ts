@@ -1,4 +1,4 @@
-// Quiz Types
+
 export interface Quiz {
   id: string;
   userId: string;
@@ -10,7 +10,7 @@ export interface Quiz {
   status: QuizStatus;
   score: number;
   correctAnswers: number;
-  wrongAnswers: number;
+  wrongAnswers: QuizQuestion[];
   skippedQuestions: number;
 }
 
@@ -46,7 +46,7 @@ export interface QuizResult {
   totalScore: number;
   totalQuestions: number;
   correctAnswers: number;
-  wrongAnswers: number;
+  wrongAnswers: QuizQuestion[];
   skippedQuestions: number;
   successRate: number;
   levelAnalysis: {
@@ -56,7 +56,6 @@ export interface QuizResult {
     [key: string]: WordTypeAnalysis;
   };
   recommendations: string[];
-  wrongAnswers: QuizQuestion[];
   timeSpent: number;
   averageTimePerQuestion: number;
 }
